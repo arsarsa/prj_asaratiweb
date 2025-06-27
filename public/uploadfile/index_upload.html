@@ -1,0 +1,72 @@
+<!-- uploadfile/index_upload.html -->
+<!-- Backend -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asarati.it | Backend Upload</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <h1>Index | Seleziona il Sistema di Archiviazione</h1>
+  <p>Seleziona se operare con Emulatore, Online o Animate.</p>
+
+  <p><strong>Utente:</strong> <span id="user-email">Verifica in corso...</span></p>
+
+  <script type="module">
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
+    import { app } from "./scripts/firebase-config.js";
+    import { logout } from "./scripts/login_upload.js";
+
+    const auth = getAuth(app);
+
+    // Protezione della pagina: se l'utente non è autenticato, viene reindirizzato
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "/uploadfile/login_upload.html"; // Reindirizza se non autenticato
+      } else {
+        document.getElementById("user-email").textContent = user.email; // Mostra l'email dell'utente
+      }
+    });
+
+    // Pulsante logout
+    document.getElementById("logoutButton").addEventListener("click", () => {
+      logout();
+    });
+
+    // Funzione per il pulsante Emulate
+    document.getElementById('emulateButton').addEventListener('click', function() {
+      window.location.href = './emulate_conn.html'; 
+    });
+
+    // Funzione per il pulsante Emulate Home
+    document.getElementById('emulateHomeButton').addEventListener('click', function() {
+      window.location.href = './emulate_home.html'; 
+    });
+
+    // Funzione per il pulsante Online
+    document.getElementById('onlineButton').addEventListener('click', function() {
+      window.location.href = './online_upload.html'; 
+    });
+
+    // Funzione per il pulsante Animate (firebasestorageweb)
+    document.getElementById('animateButton').addEventListener('click', function() {
+      window.location.href = 'https://asarati.it'; 
+    });
+  </script>
+
+  <button id="logoutButton">Logout</button>
+
+  <!-- Pulsante per Emulate -->
+  <button id="emulateButton">Emulate Backend</button> | 
+  <!-- Pulsante per Emulate Home -->
+  <button id="emulateHomeButton">Emulate Home</button> | 
+  <!-- Pulsante per Online -->
+  <button id="onlineButton">Online Backend</button> | 
+  <!-- Pulsante per Animate -->
+  <button id="animateButton">Sito Online</button>
+
+</body>
+</html>

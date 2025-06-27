@@ -1,0 +1,23 @@
+[
+    {
+        id: "A",
+        name: "Libro A",
+        description: "Un ebook interessante",
+        price: 9.99,
+        filePath: "uploadfile/ebook_USN.epub"
+    },
+    {
+        id: "B",
+        name: "Audiobook B",
+        description: "Un audiolibro fantastico",
+        price: 15.99,
+        filePath: "products/B/file.mp3"
+    },
+    {
+        id: "C",
+        name: "Pacchetto C",
+        description: "Contiene più file",
+        price: 20.99,
+        filePath: "products/C/file.zip"
+    }
+]

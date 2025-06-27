@@ -1,0 +1,90 @@
+<!-- uploadfile/online_upload.html -->
+<!-- Backend -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>asarati.it | Upload File Backend</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <style>
+    .highlight-online {
+      background-color: darkred;
+      color: white;
+      padding: 0 5px;
+      border-radius: 3px;
+    }
+
+    #ebookList, #audioList, #boxList {
+    display: none;
+    }
+</style>
+</head>
+<body>
+  <h1><b><span class="highlight-online">Online Backend</span></b> | Inserimento File</h1>
+  
+  <button onclick="window.location.href='index_upload.html'">Torna all'Index Upload</button>
+  <hr>
+
+  <h2>Carica eBook (.epub | .pdf)</h2>
+  <input type="file" id="ebookInput" accept=".epub, .pdf">
+  <input type="number" id="ebookPrice" placeholder="Prezzo in EUR">
+  <button id="uploadEbookButton">Carica eBook</button>
+  <p id="ebookMessage"></p>
+  <p id="ebookFileId"></p>
+
+  <h2>Carica AudioBook (.mp3)</h2>
+  <input type="file" id="audiobookInput" accept="audio/*">
+  <input type="number" id="audiobookPrice" placeholder="Prezzo in EUR">
+  <button id="uploadaudiobookButton">Carica audioBook</button>
+  <p id="audiobookMessage"></p>
+  <p id="audiobookFileId"></p>
+
+  <h2>Carica boxBook (.zip)</h2>
+  <input type="file" id="fileZipInput" accept=".zip">
+  <input type="number" id="fileZipPrice" placeholder="Prezzo in EUR">
+  <button id="uploadfileZipButton">Carica boxBook</button>
+  <p id="fileZipMessage"></p>
+  <p id="fileZipFileId"></p>
+  
+  <button id="toggleFilesBtn">🔼 Mostra/Nascondi file</button>
+
+  <hr>
+
+<div id="ebookList"></div>
+<div id="audioList"></div>
+<div id="boxList"></div>
+
+<!-- Modale login -->
+<div id="loginModal" style="display:none; position:fixed; top:30%; left:50%; transform:translateX(-50%); background:#fff; border:1px solid #ccc; padding:20px; z-index:1000;">
+  <p>✅ Login eseguito con successo</p>
+  <button onclick="document.getElementById('loginModal').style.display='none'">OK</button>
+</div>
+
+<!-- Modale aggiornamento prezzo -->
+<div id="priceModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; padding:20px; z-index:1000;">
+  <h3>💰 Aggiorna Prezzo</h3>
+  <input type="text" id="newPriceInput" placeholder="Nuovo prezzo (€)" />
+  <button id="confirmPriceUpdateBtn">✅ Aggiorna</button>
+  <button onclick="document.getElementById('priceModal').style.display='none'">❌ Annulla</button>
+</div>
+
+<!-- Modale download file -->
+<div id="downloadModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; padding:20px; z-index:1000;">
+  <h3>📥 Download File</h3>
+  <button id="confirmDownloadBtn">📥 Download</button>
+  <button onclick="document.getElementById('downloadModal').style.display='none'">❌ Annulla</button>
+</div>
+
+<!-- Modale conferma eliminazione -->
+<div id="deleteModal" style="display:none; position:fixed; top:30%; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; padding:20px; z-index:1000;">
+  <h3>⚠️ Conferma Eliminazione</h3>
+  <p id="deleteMessage"></p>
+  <button id="confirmDeleteBtn">🗑️ Elimina</button>
+  <button onclick="document.getElementById('deleteModal').style.display='none'">❌ Annulla</button>
+</div>
+
+  <script type="module" src="scripts/online_upload.js"></script>
+</body>
+</html>

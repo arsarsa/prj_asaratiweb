@@ -1,0 +1,84 @@
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <tab name="Init" type="InitTab" active="false" scrollx="20" scrolly="20" scale="0.9"></tab>
+  <tab name="New Tab" type="CommonTab" active="true" scrollx="111.34948425292941" scrolly="23.20859374999992" scale="0.9">
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenHovered" id="`c[X,J2[lqxZvvm+HVN$" inline="false" x="-34" y="90">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <value name="VALUE">
+        <shadow type="objectList" id="Oy+f:22z/#Q)Sw)3(amT">
+          <field name="FIELDNAME">iPadFront</field>
+        </shadow>
+      </value>
+      <statement name="DO_OVER">
+        <block type="setCSSRuleStyle" id="zI~c((+HW{[Rc9PMDLS-">
+          <mutation xmlns="http://www.w3.org/1999/xhtml" mediaruleslot="false"></mutation>
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id="NINy[)rg(Wgf;Nm%C/fu">
+              <field name="TEXT">pointer</field>
+            </shadow>
+            <block type="text" id="Nw-eU^{zcOXQ@WD?.0AS">
+              <field name="TEXT">pointer</field>
+            </block>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="hU+cGIM{,C}(NWk(U#bR">
+              <field name="TEXT">.myClass</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="%(?e,+uaD.~/J%U(93}M">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <statement name="DO_OUT">
+        <block type="setCSSRuleStyle" id="U$z}4W.!*)X({yN:m?1,">
+          <mutation xmlns="http://www.w3.org/1999/xhtml" mediaruleslot="false"></mutation>
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id="=Rt_xY?Iw?|zty~CKNCE">
+              <field name="TEXT">default</field>
+            </shadow>
+            <block type="text" id="i{hy~Lcghuu%TP.$y+@y">
+              <field name="TEXT">default</field>
+            </block>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="0hS^0:M_M)Y7UKsn34M?">
+              <field name="TEXT">.myClass</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="EyIK]f/CA0p)xetnMu(_">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenClicked" id="+lY|Q]Xr[=PmPHh/.b33" inline="false" x="-39" y="285">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <field name="DOUBLE_CLICK">FALSE</field>
+      <field name="LEFT_BUTTON">TRUE</field>
+      <field name="MIDDLE_BUTTON">TRUE</field>
+      <field name="RIGHT_BUTTON">TRUE</field>
+      <value name="VALUE">
+        <shadow type="objectList" id="$dg[{@L5j4Jlx|aJ[NK+">
+          <field name="FIELDNAME">iPadFront</field>
+        </shadow>
+      </value>
+      <statement name="DO">
+        <block type="execScript" id="g_sGHFZVHSHi;6|Hihhf">
+          <value name="TEXT">
+            <shadow type="textMultiline" id="Lkd=uxCq@MoKJBK4=deS">
+              <field name="HIGHLIGHT_MODE">javascript</field>
+              <field name="TEXT" editor-height="7" editor-width="715.2951388888889">window.parent.postMessage({ type: 'verge3d-button-clicked' }, '*');</field>
+            </shadow>
+          </value>
+        </block>
+      </statement>
+    </block>
+  </tab>
+  <editorsettings viewport-x="886.1999999999999" viewport-y="37" viewport-w="602.8" viewport-h="446" viewport-hidden="false" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
+</xml>

@@ -1,0 +1,84 @@
+<!-- src/assets/index.html -->
+<!-- Frontend -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>asarati.it</title>
+
+  <!-- Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- Bundle (verge, logica)
+  <script type="module" src="/main.bundle.js"></script>
+   -->
+
+  <style>
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <div id="paymentModal" class="modal hidden">
+    <div class="modal-content">
+      <button id="closeModal" class="close-button">Chiudi</button>
+      <h2 id="sectionTitle">Scegli un metodo di pagamento</h2>
+      <p id="paymentMessage" class="text-sm text-gray-600 mb-4"></p>
+
+      <div id="userMessageBox" class="hidden p-2 rounded text-sm mb-3"></div>
+
+      <div id="paymentOptions">
+        <button id="stripeButton" class="payment-button">Paga con Stripe</button>
+        <button id="paypalButton" class="payment-button">Paga con PayPal</button>
+        <button id="cryptoButton" class="payment-button">Paga con Crypto</button>
+      </div>
+
+      <div id="stripeFormContainer" class="modal hidden">
+        <form id="stripeForm" autocomplete="on">
+          <label for="stripeEmail">Email:</label>
+          <input
+            type="email"
+            id="stripeEmail"
+            name="email"
+            autocomplete="email"
+            required
+          />
+
+          <label>
+            <input
+              type="checkbox"
+              id="subscribeNewsletter"
+              name="newsletter"
+              autocomplete="off"
+            />
+            Iscrivimi alla mailing list
+          </label>
+
+          <label for="card-element">Numero Carta:</label>
+          <div id="card-element" class="stripe-input"></div>
+
+          <button type="submit" id="stripeSubmitButton">Conferma Pagamento</button>
+        </form>
+        <div id="paymentResult"></div>
+      </div>
+
+      <div id="paypalFormContainer" style="display: none;">
+        <p>Stiamo lavorando per attivare i pagamenti con PayPal. Riprova più tardi! 🚀</p>
+      </div>
+
+      <div id="cryptoFormContainer" style="display: none;">
+        <p>Stiamo lavorando per abilitare i pagamenti in criptovalute. Torna presto! 🔗</p>
+      </div>
+
+      <button id="backToPaymentOptions" class="close-button hidden">Indietro</button>
+    </div>
+  </div>
+
+  <div id="dynamicProducts"></div>
+  <div id="verge-container">
+    <iframe id="verge-frame" src="/asaratianm/asaratianm.html" width="100%" height="600px" frameborder="0"></iframe>
+  </div>
+</body>
+</html>
