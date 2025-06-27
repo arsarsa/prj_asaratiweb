@@ -1,0 +1,26 @@
+# File di log
+*.log
+
+# File di configurazione locali e segreti
+.env
+config.json
+current-config.json
+
+# Cartelle di dipendenze
+node_modules/
+
+# Cartelle di build
+dist/
+build/
+
+# File di sistema Mac e Windows
+.DS_Store
+Thumbs.db
+
+# Cartelle editor
+.vscode/
+.idea/
+
+# Backup e file temporanei
+*.bak
+*.tmp
