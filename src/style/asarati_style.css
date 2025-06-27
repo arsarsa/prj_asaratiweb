@@ -1,0 +1,136 @@
+/* src/style/asarati_style.css
+
+/* ---------------------------------
+   Impostazioni Globali
+---------------------------------- */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000; /* Puoi cambiare il colore di sfondo */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
+  color: #333;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+/* ---------------------------------
+   Verge3D Container
+---------------------------------- */
+#verge-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#verge-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* ---------------------------------
+   Modale di Pagamento
+---------------------------------- */
+#paymentModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+}
+
+/* Nascondi elementi */
+.hidden {
+  display: none !important;
+}
+
+/* ---------------------------------
+   Form Stripe e Pulsanti
+---------------------------------- */
+#stripeFormContainer {
+  margin: 1rem 0;
+}
+
+#sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;     /* spazio sotto il titolo */
+  text-align: center;      /* centrato */
+  color: #333;
+  font-family: 'Arial', sans-serif;
+}
+
+/* Stile base dei pulsanti */
+button.payment-button,
+button.close-button {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  margin: 0.5rem auto;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Hover e Focus comuni */
+button:hover,
+button:focus {
+  transform: scale(1.05);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+  outline: none;
+}
+
+/* Colori specifici per ogni tipo di pagamento */
+#stripeButton {
+  background-color: #6772e5;
+  color: #fff;
+}
+
+#paypalButton {
+  background-color: #ffc439;
+  color: #111;
+}
+
+#cryptoButton {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+/* Pulsante di chiusura */
+.close-button {
+  background-color: #333;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-top: 1.5rem;
+}
+
+.close-button:hover {
+  background-color: #555;
+}

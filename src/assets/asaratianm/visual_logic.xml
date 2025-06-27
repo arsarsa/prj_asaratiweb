@@ -1,0 +1,240 @@
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <tab name="Init" type="InitTab" active="false" scrollx="78" scrolly="0" scale="0.9"></tab>
+  <tab name="New Tab" type="CommonTab" active="true" scrollx="140.1763125138441" scrolly="-396.87979295211545" scale="0.6624587858401896">
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenHovered" id="ANIq^V8x]QItX68rAhl-" inline="false" x="-17" y="187">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <value name="VALUE">
+        <shadow type="objectList" id="J]n:L0D%AMjUom11P^@^">
+          <field name="FIELDNAME">eBook_Front</field>
+        </shadow>
+      </value>
+      <statement name="DO_OVER">
+        <block type="setHTMLElemStyle" id="V~(~z1V3;fHNPo3JJV[s">
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id=")9wTKu9DwzRhs)He%ocI">
+              <field name="TEXT">pointer</field>
+            </shadow>
+            <block type="text" id="}P3~+d^,%N{aP]n=z6OU">
+              <field name="TEXT">pointer</field>
+            </block>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="wz/QQo-;`{?rGY[POZ2z">
+              <field name="TEXT">myElem</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="9=gxD1/??wejM#H%nkNX">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <statement name="DO_OUT">
+        <block type="setHTMLElemStyle" id="ZXch0i$uyyTcnhFQ]tJ2">
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id="P!!;0cOpc*!N0.Q7qAJa">
+              <field name="TEXT">default</field>
+            </shadow>
+            <block type="text" id="O?%Ucn-SS[pBFVYVMyhw">
+              <field name="TEXT">default</field>
+            </block>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="`5=y}QnAN6ZPkVmEUi*2">
+              <field name="TEXT">myElem</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="Uzhh4tc=_orAg(Fn|[.#">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <next>
+        <block type="whenClicked" id="+lY|Q]Xr[=PmPHh/.b33" inline="false">
+          <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
+          <field name="X_RAY">FALSE</field>
+          <field name="DOUBLE_CLICK">FALSE</field>
+          <field name="LEFT_BUTTON">TRUE</field>
+          <field name="MIDDLE_BUTTON">TRUE</field>
+          <field name="RIGHT_BUTTON">TRUE</field>
+          <value name="VALUE">
+            <shadow type="objectList" id="$dg[{@L5j4Jlx|aJ[NK+">
+              <field name="FIELDNAME">eBook_Front</field>
+            </shadow>
+          </value>
+          <statement name="DO">
+            <block type="execScript" id="g_sGHFZVHSHi;6|Hihhf">
+              <value name="TEXT">
+                <shadow type="textMultiline" id="Lkd=uxCq@MoKJBK4=deS">
+                  <field name="HIGHLIGHT_MODE">javascript</field>
+                  <field name="TEXT" editor-height="11" editor-width="717.7177715292711">console.log("Click su bottone!")&amp;#10;&amp;#10;// Bottone di scelta della modalità di pagamento&amp;#10;window.parent.postMessage({ action: "openPaymentModal" }, "*");&amp;#10;&amp;#10;window.parent.postMessage({&amp;#10;    action: "openPaymentModal",&amp;#10;    filename: "ebook.epub",&amp;#10;    filetype: "eBook in formato .epub"&amp;#10;}, "*");</field>
+                </shadow>
+              </value>
+            </block>
+          </statement>
+        </block>
+      </next>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenHovered" id="bgkG,I|W00G=3SOuyjID" inline="false" x="-19" y="658">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <value name="VALUE">
+        <shadow type="objectList" id="DzZCJDwlC(*5lpE*)UXX">
+          <field name="FIELDNAME">audioBook_Front</field>
+        </shadow>
+      </value>
+      <statement name="DO_OVER">
+        <block type="setHTMLElemStyle" id="s-IQ4Y|HW_+?nw,V{k|D">
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id=")9wTKu9DwzRhs)He%ocI">
+              <field name="TEXT">pointer</field>
+            </shadow>
+            <block type="text" id="41PNaV%wTf_qaNOn_q]k">
+              <field name="TEXT">pointer</field>
+            </block>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="wz/QQo-;`{?rGY[POZ2z">
+              <field name="TEXT">myElem</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="cTlR@Ytdp*J[x:^7YGW8">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <statement name="DO_OUT">
+        <block type="setHTMLElemStyle" id=".X*5X6(9dYjF#Doy},Jm">
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id="P!!;0cOpc*!N0.Q7qAJa">
+              <field name="TEXT">default</field>
+            </shadow>
+            <block type="text" id="KFb16:usJu?qk)$=F=Hf">
+              <field name="TEXT">default</field>
+            </block>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="`5=y}QnAN6ZPkVmEUi*2">
+              <field name="TEXT">myElem</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="mU;{Uv/S5(*o^S)^8VC_">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <next>
+        <block type="whenClicked" id="fBe_32:L!oH%@/c$mICM" inline="false">
+          <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
+          <field name="X_RAY">FALSE</field>
+          <field name="DOUBLE_CLICK">FALSE</field>
+          <field name="LEFT_BUTTON">TRUE</field>
+          <field name="MIDDLE_BUTTON">TRUE</field>
+          <field name="RIGHT_BUTTON">TRUE</field>
+          <value name="VALUE">
+            <shadow type="objectList" id="DM`?71S=}U?`3)-lC6OB">
+              <field name="FIELDNAME">audioBook_Front</field>
+            </shadow>
+          </value>
+          <statement name="DO">
+            <block type="execScript" id="2%#Eyf3DXrzkfk$1rsOX">
+              <value name="TEXT">
+                <shadow type="textMultiline" id="z%c!VMhY*]C}m=24d,!j">
+                  <field name="HIGHLIGHT_MODE">javascript</field>
+                  <field name="TEXT" editor-height="15" editor-width="718.4513888888889">console.log("audioBook_Front cliccato!");&amp;#10;&amp;#10;// Invio al parent (pagina HTML) il comando per aprire la modale di pagamento&amp;#10;window.parent.postMessage({&amp;#10;    action: "openPaymentModal",&amp;#10;    filename: "audiobook.mp3",&amp;#10;    filetype: "audioBook in formato .mp3"&amp;#10;}, "*");&amp;#10;</field>
+                </shadow>
+              </value>
+            </block>
+          </statement>
+        </block>
+      </next>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenHovered" id="RPfrsO{PCOi[f$gHK-sg" inline="false" x="-18" y="1228">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <value name="VALUE">
+        <shadow type="objectList" id="p0xM*2n$x4`2sYu.WhTP">
+          <field name="FIELDNAME">boxBook_Front</field>
+        </shadow>
+      </value>
+      <statement name="DO_OVER">
+        <block type="setHTMLElemStyle" id="C@t]Uqp?l)gs`z]tEyl$">
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id=")9wTKu9DwzRhs)He%ocI">
+              <field name="TEXT">pointer</field>
+            </shadow>
+            <block type="text" id="M9Y$^4=c8:xNG1jdM]8=">
+              <field name="TEXT">pointer</field>
+            </block>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="wz/QQo-;`{?rGY[POZ2z">
+              <field name="TEXT">myElem</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="Vq33_@Xt=~01jw8buo$g">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <statement name="DO_OUT">
+        <block type="setHTMLElemStyle" id="3|ROyH]TFCASc;@1J$C;">
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id="P!!;0cOpc*!N0.Q7qAJa">
+              <field name="TEXT">default</field>
+            </shadow>
+            <block type="text" id="j~X,$]:*.T#],6:ksCeB">
+              <field name="TEXT">default</field>
+            </block>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="`5=y}QnAN6ZPkVmEUi*2">
+              <field name="TEXT">myElem</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="i=-n/p*WuP-(p(!oPX{#">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <next>
+        <block type="whenClicked" id=",:Dz!c;K$k*PBTL)K~ea" inline="false">
+          <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
+          <field name="X_RAY">FALSE</field>
+          <field name="DOUBLE_CLICK">FALSE</field>
+          <field name="LEFT_BUTTON">TRUE</field>
+          <field name="MIDDLE_BUTTON">TRUE</field>
+          <field name="RIGHT_BUTTON">TRUE</field>
+          <value name="VALUE">
+            <shadow type="objectList" id="}aQm*QR-zTodW}DfB:}y">
+              <field name="FIELDNAME">boxBook_Front</field>
+            </shadow>
+          </value>
+          <statement name="DO">
+            <block type="execScript" id="$lWl9`[3,cBjYWp4qi?i">
+              <value name="TEXT">
+                <shadow type="textMultiline" id="}gc+Q^SGGsGl)-lRn^O{">
+                  <field name="HIGHLIGHT_MODE">javascript</field>
+                  <field name="TEXT" editor-height="15" editor-width="718.4513888888889">console.log("boxBook_Front cliccato!");&amp;#10;&amp;#10;// Invio al parent (pagina HTML) il comando per aprire la modale di pagamento&amp;#10;window.parent.postMessage({&amp;#10;    action: "openPaymentModal",&amp;#10;    filename: "boxbook.zip",&amp;#10;    filetype: "boxBook in formato .zip"&amp;#10;}, "*");&amp;#10;</field>
+                </shadow>
+              </value>
+            </block>
+          </statement>
+        </block>
+      </next>
+    </block>
+  </tab>
+  <editorsettings viewport-x="886.1999999999999" viewport-y="37" viewport-w="602.8" viewport-h="446" viewport-hidden="true" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
+</xml>
