@@ -1,24 +1,27 @@
 // functions/payment/getStripePublicKey.js
-// Backend - Cloud Function
+// Backend - Firebase Cloud Function per fornire chiave pubblica Stripe
 
-import { https } from 'firebase-functions';
-import { region } from 'firebase-functions';
 import * as functions from 'firebase-functions';
 
-export const getStripePublicKey = region('europe-west1').https.onCall((data, context) => {
-  // ✅ Nessun controllo su context.auth
+export const getStripePublicKey = functions
+  .region('europe-west1')
+  .https.onCall((data, context) => {
+    // Nessun controllo su context.auth - chiave pubblica può essere distribuita liberamente
 
-  const isLocalhost = data.isLocalhost || false;
+    const isLocalhost = data?.isLocalhost === true;
 
-  const config = functions.config();
+    // Recupera la configurazione Functions
+    const config = functions.config();
 
-  const publicKey = isLocalhost
-    ? config.stripe.test_public_key || config.stripe.public_key
-    : config.stripe.live_public_key;
+    // Se siamo in localhost, preferisci la chiave di test ("test_public_key") o fallback a "public_key"
+    // Altrimenti la chiave live ("live_public_key")
+    const publicKey = isLocalhost
+      ? config.stripe?.test_public_key || config.stripe?.public_key
+      : config.stripe?.live_public_key;
 
-  if (!publicKey) {
-    throw new https.HttpsError('not-found', 'Chiave Stripe pubblica non trovata.');
-  }
+    if (!publicKey) {
+      throw new functions.https.HttpsError('not-found', 'Chiave Stripe pubblica non trovata.');
+    }
 
-  return { publicKey };
-});
+    return { publicKey };
+  });

@@ -6,7 +6,7 @@ import {
   getStripePublicKey,
   getDownloadURLForFile,
   subscribeToNewsletter
-} from '../utils/paymentUtils.js';
+} from '../../utils/paymentUtils.js';
 
 async function purchaseAndDownload({ ebookId, email, wantsNewsletter }) {
   try {

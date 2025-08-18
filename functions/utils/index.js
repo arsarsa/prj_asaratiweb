@@ -1,7 +1,9 @@
 // functions/utils/index.js
 // Backend - Per funzioni generiche
 
-exports.errorHandler = (err) => {
-  console.error('Errore:', err);
+import * as functions from 'firebase-functions';
+
+export const errorHandler = (err) => {
+  functions.logger.error('Errore:', err);
   return err;
 };

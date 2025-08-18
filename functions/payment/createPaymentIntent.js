@@ -1,111 +1,121 @@
 // functions/payment/createPaymentIntent.js
-// Backend (Firebase Cloud Function - Stripe PaymentIntent)
 
-import { initializeApp, applicationDefault } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
 import * as functions from "firebase-functions";
 import Stripe from "stripe";
-import dotenv from "dotenv";
+import { firestore } from "../firebaseAdmin.js";
+import { 
+  validateIdOrThrow, 
+  validateEmailOrThrow, 
+  logInfo, 
+  logError, 
+  throwHttpsError 
+} from "../utils/common.js";
 
-// ✅ Carica .env solo in locale
-if (process.env.NODE_ENV !== 'production') {
-  dotenv.config();
+// Inizializzazione Stripe (chiave segreta da env o Firebase config)
+const stripeSecret = process.env.STRIPE_SECRET || functions.config().stripe?.secret;
+
+if (!stripeSecret) {
+  throw new Error("Chiave Stripe segreta mancante. Configura STRIPE_SECRET.");
 }
 
-// ✅ Inizializzazione Firebase Admin
-initializeApp({
-  credential: applicationDefault()
-});
+// Usa versione API Stripe aggiornata
+const stripe = new Stripe(stripeSecret, { apiVersion: "2025-04-30.basil" });
 
-const firestore = getFirestore(); // ✅ Ottieni Firestore correttamente
-
-// ✅ Inizializzazione Stripe
-// Funziona in locale e in produzione
-const stripeSecret =
-  process.env.STRIPE_SECRET || functions.config().stripe?.secret;
-
-if (!stripeSecret) throw new Error("Chiave Stripe mancante.");
-
-const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
-
+/**
+ * Callable HTTPS Cloud Function per creare un PaymentIntent Stripe.
+ * Riceve dati da frontend per il prodotto acquistato e l'email ricevuta.
+ */
 export const createPaymentIntent = functions
-  .region("europe-west1")
+  .region("europe-west1") // adegua in base alla region preferita
   .https.onCall(async (data, context) => {
-    const { productId, receiptEmail, currency = "eur", metadata = {} } = data;
+    logInfo("📌 Richiesta createPaymentIntent ricevuta", { data });
 
-    // ✅ Validazione parametri
-    if (!productId || typeof productId !== "string") {
-      throw new functions.https.HttpsError("invalid-argument", "ID del prodotto mancante o non valido.");
-    }
-
-    if (!receiptEmail || typeof receiptEmail !== "string") {
-      throw new functions.https.HttpsError("invalid-argument", "Email non valida.");
-    }
-
-    // ✅ Recupera il prodotto da Firestore
-    const productRef = firestore.collection("products").doc(productId);
-    const productSnap = await productRef.get();
-
-    if (!productSnap.exists) {
-      throw new functions.https.HttpsError("not-found", "Prodotto non trovato.");
-    }
-
-    const productData = productSnap.data();
-    const { price, title, type } = productData;
-
-    if (typeof price !== "number" || price <= 0) {
-      throw new functions.https.HttpsError("invalid-argument", "Prezzo non valido nel prodotto.");
-    }
-
-    // ✅ Crea PaymentIntent
-    let paymentIntent;
     try {
-      paymentIntent = await stripe.paymentIntents.create({
+      // Estrai e valida parametri
+      const { productId, receiptEmail, currency = "eur", metadata = {} } = data;
+
+      validateIdOrThrow(productId);
+      validateEmailOrThrow(receiptEmail);
+
+      // Recupero dati prodotto da Firestore
+      const productRef = firestore.collection("products").doc(productId);
+      const productSnap = await productRef.get();
+
+      if (!productSnap.exists) {
+        throwHttpsError("not-found", "Prodotto non trovato.");
+      }
+
+      const productData = productSnap.data();
+      const { price, title, type } = productData;
+
+      if (typeof price !== "number" || price <= 0) {
+        throwHttpsError("invalid-argument", "Prezzo non valido nel prodotto.");
+      }
+
+      // Crea PaymentIntent su Stripe
+      let paymentIntent;
+      try {
+        paymentIntent = await stripe.paymentIntents.create({
+          amount: price,
+          currency,
+          receipt_email: receiptEmail,
+          meta {
+            ...metadata,
+            productId,
+            title,
+            type,
+          },
+          automatic_payment_methods: { enabled: true },
+        });
+      } catch (err) {
+        logError("Errore durante creazione PaymentIntent Stripe", err);
+        throwHttpsError("internal", "Errore creazione PaymentIntent Stripe.");
+      }
+
+      // Salva la transazione su Firestore
+      const transactionRef = firestore.collection("transactions").doc();
+      const transactionId = transactionRef.id;
+      const timestamp = Date.now();
+
+      const transactionData = {
+        email: receiptEmail,
+        productId,
+        productTitle: title,
+        productType: type,
         amount: price,
         currency,
-        receipt_email: receiptEmail,
-        metadata: {
-          ...metadata,
-          productId,
-          title,
-          type
-        },
-        automatic_payment_methods: { enabled: true }
+        paymentIntentId: paymentIntent.id,
+        clientSecret: paymentIntent.client_secret,
+        status: "created",
+        timestamp,
+      };
+
+      await transactionRef.set(transactionData);
+
+      logInfo("✅ PaymentIntent e transazione salvati con successo", {
+        paymentIntentId: paymentIntent.id,
+        transactionId,
       });
-    } catch (err) {
-      functions.logger.error("❌ Errore Stripe:", err);
-      throw new functions.https.HttpsError("internal", "Errore creazione PaymentIntent.");
+
+      // Risposta al frontend
+      return {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        transactionId,
+      };
+
+    } catch (error) {
+      logError("❌ Errore in createPaymentIntent callable", error);
+
+      if (error instanceof functions.https.HttpsError) {
+        throw error; // Rilancia gli errori formattati
+      }
+
+      // Errore generico
+      throw new functions.https.HttpsError(
+        "internal",
+        "Errore interno durante la creazione del pagamento.",
+        error.message || error.toString()
+      );
     }
-
-    // ✅ Salva la transazione su Firestore
-    const transactionRef = firestore.collection("transactions").doc();
-    const transactionId = transactionRef.id;
-    const timestamp = Date.now();
-
-    const transactionData = {
-      email: receiptEmail,
-      productId,
-      productTitle: title,
-      productType: type,
-      amount: price,
-      currency,
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret,
-      status: "created",
-      timestamp
-    };
-
-    await transactionRef.set(transactionData);
-
-    // ✅ Risposta al frontend
-    functions.logger.info("✅ PaymentIntent & transazione salvata", {
-      paymentIntentId: paymentIntent.id,
-      transactionId
-    });
-
-    return {
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      transactionId
-    };
   });

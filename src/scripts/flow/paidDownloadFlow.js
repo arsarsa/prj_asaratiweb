@@ -7,8 +7,13 @@ import {
   subscribeToNewsletter
 } from '../utils/paymentUtils.js';
 
+import { isValidEmail, isNonEmptyString } from '../utils/commonFrontend.js';
+
 export async function initPaidDownloadFlow({ productId, email, wantsNewsletter }) {
   try {
+    if (!isNonEmptyString(productId)) throw new Error('ID prodotto non valido.');
+    if (!isValidEmail(email)) throw new Error('Email non valida.');
+
     showStatus('💳 Avvio procedura di pagamento...');
 
     const publicKey = await getStripePublicKey();
@@ -24,7 +29,7 @@ export async function initPaidDownloadFlow({ productId, email, wantsNewsletter }
     if (result.paymentIntent.status === 'succeeded') {
       showStatus('✅ Pagamento riuscito!');
 
-      if (wantsNewsletter && email) {
+      if (wantsNewsletter) {
         showStatus('📩 Iscrizione alla newsletter...');
         await subscribeToNewsletter(email);
       }

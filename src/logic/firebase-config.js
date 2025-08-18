@@ -1,4 +1,4 @@
-// src/firebase-config.js
+// src/logic/firebase-config.js
 // Backend
 
 import { initializeApp } from "firebase/app";

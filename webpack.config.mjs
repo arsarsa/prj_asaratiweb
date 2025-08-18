@@ -20,9 +20,10 @@ export default {
   },
 
   output: {
-    path: path.resolve(__dirname, 'public'),
+    // Metto i bundle dentro public/js per coerenza con la struttura desiderata
+    path: path.resolve(__dirname, 'public', 'js'),
     filename: '[name].bundle.js',
-    clean: true,
+    clean: true,  // Pulisce la cartella ad ogni build
   },
 
   resolve: {
@@ -47,7 +48,9 @@ export default {
   },
 
   mode: 'production',
-  devtool: false,
+
+  // Abilita source map per debugging in produzione (opzionale, rimuovibile)
+  devtool: 'source-map',
 
   experiments: {
     asyncWebAssembly: true,
@@ -66,36 +69,40 @@ export default {
         },
       },
       {
-      test: /\.wasm$/,
-      type: 'webassembly/async',
-    },
-    {
-      test: /\.css$/i,
-      use: ['style-loader', 'css-loader'],
-    },
+        test: /\.wasm$/,
+        type: 'webassembly/async',
+      },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader'],
+      },
     ],
   },
 
   plugins: [
     new CleanWebpackPlugin(),
+
     new HtmlWebpackPlugin({
       template: path.resolve(__dirname, 'src', 'assets', 'index.html'),
-      filename: 'index.html',
+      filename: '../index.html', // esce in 'public/index.html' perché output è 'public/js'
       inject: 'body',
       minify: false,
-      hash: true,
+      hash: true, // cache busting
     }),
+
     new NodePolyfillPlugin(),
+
     new webpack.ProvidePlugin({
       process: 'process/browser',
       Buffer: ['buffer', 'Buffer'],
     }),
+
     new CopyWebpackPlugin({
       patterns: [
         {
           from: path.resolve(__dirname, 'src', 'assets'),
           to: path.resolve(__dirname, 'public'),
-          globOptions: { ignore: ['**/index.html'] },
+          globOptions: { ignore: ['**/index.html'] }, // esclude il file index.html che gestiamo con HtmlWebpackPlugin
         },
         {
           from: path.resolve(__dirname, 'uploadfile'),
@@ -103,6 +110,7 @@ export default {
         },
       ],
     }),
+
     new BundleAnalyzerPlugin({
       analyzerMode: 'static',
       openAnalyzer: false,
@@ -111,7 +119,7 @@ export default {
 
   optimization: {
     usedExports: true,
-    minimize: false,
+    minimize: true,  // abilita minimizzazione per build prod
     splitChunks: {
       chunks: 'all',
       maxSize: 200000,

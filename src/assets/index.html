@@ -1,19 +1,18 @@
 <!-- src/assets/index.html -->
-<!-- Frontend -->
 
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>asarati.it</title>
 
-  <!-- Stripe -->
+  <!-- Stripe SDK -->
   <script src="https://js.stripe.com/v3/"></script>
 
-  <!-- Bundle (verge, logica)
-  <script type="module" src="/main.bundle.js"></script>
-   -->
+  <!-- Bundle JS generati da Webpack in public/js -->
+  <script type="module" src="/js/main.bundle.js"></script>
+  <script type="module" src="/js/purchase.bundle.js"></script>
 
   <style>
     .hidden { display: none; }
@@ -80,5 +79,6 @@
   <div id="verge-container">
     <iframe id="verge-frame" src="/asaratianm/asaratianm.html" width="100%" height="600px" frameborder="0"></iframe>
   </div>
+  
 </body>
 </html>

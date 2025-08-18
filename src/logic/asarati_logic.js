@@ -1,4 +1,4 @@
-// src/asarati_logic.js
+// src/logic/asarati_logic.js
 // Frontend (Gestione di tutta la logica client-side e avvio dell’inizializzazione)
 
 import './style/asarati_style.css';
