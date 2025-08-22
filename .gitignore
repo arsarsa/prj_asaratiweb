@@ -41,9 +41,6 @@ pids
 # Firebase cache
 .firebase/
 
-# Firebase config
-.firebaserc
-
 # Directory per librerie strumentate jscoverage/JSCover
 lib-cov
 
