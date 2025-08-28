@@ -104,10 +104,12 @@ export default {
           to: path.resolve(__dirname, 'public'),
           globOptions: { ignore: ['**/index.html'] }, // esclude il file index.html che gestiamo con HtmlWebpackPlugin
         },
+        /*
         {
           from: path.resolve(__dirname, 'uploadfile'),
           to: path.resolve(__dirname, 'public', 'uploadfile'),
         },
+        */
       ],
     }),
 
