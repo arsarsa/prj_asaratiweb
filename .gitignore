@@ -71,4 +71,21 @@ coverage
 
 # dataconnect generated files
 .dataconnect
-.DS_Store
+
+# File e cartelle generate da Verge3D (asaratianm)
+asaratianm/puzzles_backup/
+asaratianm/v3d_app_data/
+asaratianm/*.bin
+asaratianm/*.blend
+asaratianm/*.wasm
+asaratianm/v3d.js
+asaratianm/visual_logic.js
+asaratianm/visual_logic.xml
+
+# Output e report temporanei
+public/js/report.html
+
+# Script di supporto non da tracciare
+check-missing-imports.js
+comment-missing-imports.js
+replace-imports-alias.js
