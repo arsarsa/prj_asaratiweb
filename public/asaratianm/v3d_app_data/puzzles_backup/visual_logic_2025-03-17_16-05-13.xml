@@ -1,0 +1,76 @@
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <tab name="Init" type="InitTab" active="false" scrollx="-47.5" scrolly="20" scale="0.9"></tab>
+  <tab name="New Tab" type="CommonTab" active="true" scrollx="69.07989832094734" scrolly="115.50696835822555" scale="0.8964937414767631">
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenHovered" id="ANIq^V8x]QItX68rAhl-" inline="false" x="-31" y="82">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <value name="VALUE">
+        <shadow type="objectList" id="J]n:L0D%AMjUom11P^@^">
+          <field name="FIELDNAME">iPadFront</field>
+        </shadow>
+      </value>
+      <statement name="DO_OVER">
+        <block type="setHTMLElemStyle" id="V~(~z1V3;fHNPo3JJV[s">
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id=")9wTKu9DwzRhs)He%ocI">
+              <field name="TEXT">pointer</field>
+            </shadow>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="wz/QQo-;`{?rGY[POZ2z">
+              <field name="TEXT">myElem</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="9=gxD1/??wejM#H%nkNX">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <statement name="DO_OUT">
+        <block type="setHTMLElemStyle" id="ZXch0i$uyyTcnhFQ]tJ2">
+          <field name="PROPERTY">cursor</field>
+          <field name="PARENT">FALSE</field>
+          <value name="VALUE">
+            <shadow type="cursorDropdown" id="P!!;0cOpc*!N0.Q7qAJa">
+              <field name="TEXT">default</field>
+            </shadow>
+          </value>
+          <value name="ID">
+            <shadow type="text" id="`5=y}QnAN6ZPkVmEUi*2">
+              <field name="TEXT">myElem</field>
+            </shadow>
+            <block type="DOMObjectSelector" id="Uzhh4tc=_orAg(Fn|[.#">
+              <field name="DOM_OBJECT">BODY</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenClicked" id="+lY|Q]Xr[=PmPHh/.b33" inline="false" x="-17" y="330">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <field name="DOUBLE_CLICK">FALSE</field>
+      <field name="LEFT_BUTTON">TRUE</field>
+      <field name="MIDDLE_BUTTON">TRUE</field>
+      <field name="RIGHT_BUTTON">TRUE</field>
+      <value name="VALUE">
+        <shadow type="objectList" id="$dg[{@L5j4Jlx|aJ[NK+">
+          <field name="FIELDNAME">iPadFront</field>
+        </shadow>
+      </value>
+      <statement name="DO">
+        <block type="execScript" id="g_sGHFZVHSHi;6|Hihhf">
+          <value name="TEXT">
+            <shadow type="textMultiline" id="Lkd=uxCq@MoKJBK4=deS">
+              <field name="HIGHLIGHT_MODE">javascript</field>
+              <field name="TEXT" editor-height="7" editor-width="715.2951388888889">// Apertura tasto&amp;#10;window.parent.postMessage({ type: 'verge3d-button-clicked' }, '*');</field>
+            </shadow>
+          </value>
+        </block>
+      </statement>
+    </block>
+  </tab>
+  <editorsettings viewport-x="886.1999999999999" viewport-y="37" viewport-w="602.8" viewport-h="446" viewport-hidden="true" toolbox-library-mode="true" toolbox-minimized-mode="false"></editorsettings>
+</xml>

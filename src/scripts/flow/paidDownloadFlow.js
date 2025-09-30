@@ -5,9 +5,9 @@ import {
   createPaymentIntent,
   getDownloadURLForFile,
   subscribeToNewsletter
-} from '../utils/paymentUtils.js';
+} from '@utils/paymentUtils.js';
 
-import { isValidEmail, isNonEmptyString } from '../utils/commonFrontend.js';
+import { isValidEmail, isNonEmptyString } from '@utils/commonFrontend.js';
 
 export async function initPaidDownloadFlow({ productId, email, wantsNewsletter }) {
   try {

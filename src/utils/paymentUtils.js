@@ -2,7 +2,7 @@
 // Frontend - Utility per gestire interazioni con Firebase Functions e Stripe frontend integration
 
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../logic/firebase-config.js';
+import { functions } from '../logic/firebase-config.js';
 
 let stripeInstance = null;
 let elementsInstance = null;

@@ -26,8 +26,13 @@ export default {
     clean: true,  // Pulisce la cartella ad ogni build
   },
 
-  resolve: {
+ resolve: {
     extensions: ['.js', '.json'],
+    alias: {
+       '@utils': path.resolve(__dirname, 'src', 'utils'),        // Per file come fileUtils.js, uiUtils.js, paymentUtils.js...
+       '@payments': path.resolve(__dirname, 'src', 'payments'),  // Per stripePaymentForm.js posizionato in src/payments
+       '@flow': path.resolve(__dirname, 'src', 'scripts', 'flow')
+    },
     fallback: {
       stream: 'stream-browserify',
       crypto: 'crypto-browserify',

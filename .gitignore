@@ -77,6 +77,7 @@ asaratianm/puzzles_backup/
 asaratianm/v3d_app_data/
 asaratianm/*.bin
 asaratianm/*.blend
+asaratianm/*.blend?
 asaratianm/*.wasm
 asaratianm/v3d.js
 asaratianm/visual_logic.js

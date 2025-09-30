@@ -1,9 +1,9 @@
-// src/scripts/payments/stripePaymentForm.js
+// src/payments/stripePaymentForm.js
 // Frontend (Pagamento Stripe)
 
 import { loadStripeAndMountCard, createPaymentIntent } from '../utils/paymentUtils.js';
-import { initPaidDownloadFlow } from '../flow/paidDownloadFlow.js';
-import { isValidEmail, isNonEmptyString } from '../../utils/commonFrontend.js';
+import { initPaidDownloadFlow } from '@flow/paidDownloadFlow.js';
+import commonFrontend from '@utils/commonFrontend.js';
 
 export async function initStripeForm() {
   const emailInput = document.querySelector('#stripeEmail');

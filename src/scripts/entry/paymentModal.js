@@ -17,6 +17,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   const paymentContainers = [stripeFormContainer, paypalFormContainer, cryptoFormContainer];
   let stripeInitPromise = null;
 
+  const modalContent = modal.querySelector(".modal-content");
+
+  // Previeni chiusura modale cliccando dentro il contenuto (evita bubbling)
+  modalContent.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+
+  // Chiudi modale cliccando all'esterno (sul modal overlay)
+  modal.addEventListener("click", () => {
+    hideElement("paymentModal");
+  });
+
   window.addEventListener("message", (event) => {
     const data = event.data;
     if (data?.action === "openPaymentModal") {
@@ -81,21 +93,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     hideElement("paymentModal");
   });
 
-  modal.addEventListener("click", (event) => {
-    const modalContent = modal.querySelector(".modal-content");
-    if (!modalContent.contains(event.target)) {
-      hideElement("paymentModal");
-    }
-  });
-
   function showPaymentModalUI(container = null, filename = "", filetype = "", title = "") {
     showElement("paymentModal");
     showElement("paymentOptions");
     showOnlyContainer(paymentContainers, container);
     hideElement("backToPaymentOptions");
-
-    const sectionTitle = document.getElementById("sectionTitle");
-    const paymentMessage = document.getElementById("paymentMessage");
 
     const productTitle = title || filename || "il tuo prodotto";
 
@@ -103,6 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       sectionTitle.textContent = `💰 Scegli un metodo di pagamento per: ${productTitle}`;
     }
 
+    const paymentMessage = document.getElementById("paymentMessage");
     if (paymentMessage) {
       paymentMessage.textContent = `📘 Stai per scaricare: ${productTitle}`;
     }
@@ -129,5 +132,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 });
-
-
