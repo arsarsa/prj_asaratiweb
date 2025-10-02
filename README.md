@@ -1,3 +1,5 @@
+QUESTO E UN FILE DI TESTO DI PROVA!
+
 AsaratiWeb - Documentazione Generale
 Questo progetto include una web app frontend integrata con backend Firebase Functions. Fornisce un sistema di e-commerce digitale con download protetti, gestione pagamenti (attualmente Stripe), newsletter e flussi di autenticazione.
 Struttura principale del progetto
