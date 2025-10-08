@@ -6,8 +6,10 @@ import { getAuth } from "firebase/auth";
 import { getFunctions as _getFunctions } from "firebase/functions";
 import { getStorage as _getStorage, connectStorageEmulator } from "firebase/storage";
 
+const API_KEY = process.env.FIREBASE_API_KEY || "REMOVED_API_KEY";
+
 const firebaseConfig = {
-  apiKey: "REMOVED_API_KEY",
+  apiKey: API_KEY,
   authDomain: "asarati-27c0d.firebaseapp.com",
   databaseURL: "https://asarati-27c0d-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "asarati-27c0d",
