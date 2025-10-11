@@ -17,6 +17,9 @@ risultati-segreti.txt
 node_modules/
 bower_components
 
+# Cartella di backup progetto git bare
+prj_asaratiweb.git/
+
 # Cartelle di build
 dist/
 build/
