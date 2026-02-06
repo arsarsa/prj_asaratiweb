@@ -1,0 +1,267 @@
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <tab name="Init" type="InitTab" active="false" scrollx="159.18020629882812" scrolly="-167" scale="1">
+    <block xmlns="https://developers.google.com/blockly/xml" type="initSettings" id="W%sxqWS^;LK8IG7!H@zw" disabled="true" x="46" y="167">
+      <field name="LOAD_COMP_ASSETS">TRUE</field>
+      <field name="FULLSCREEN">TRUE</field>
+      <field name="BKG_TRANSPARENCY">FALSE</field>
+      <field name="PRESERVE_DRAW_BUF">FALSE</field>
+      <field name="FADE_ANNOTATIONS">TRUE</field>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="domObjectCall" id=";x^TL~cYa|FxK#$CHE|H" disabled="true" x="60" y="397">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" method_to_call="FOCUS"></mutation>
+      <field name="METHOD">FOCUS</field>
+      <field name="PARENT">TRUE</field>
+      <value name="ID">
+        <shadow type="text" id="OAr/#L*5-/!|X8{(?%4/">
+          <field name="TEXT">myElem</field>
+        </shadow>
+        <block type="querySelector" id="Ek)UcKmAh;ChRtUpLI-T">
+          <value name="QUERY">
+            <shadow type="text" id="%?c9-1iqF6WP-5]r+{Xx">
+              <field name="TEXT">iframe</field>
+            </shadow>
+          </value>
+        </block>
+      </value>
+    </block>
+  </tab>
+  <tab name="main" type="CommonTab" active="true" scrollx="-64.84562067413935" scrolly="408.96370386231206" scale="0.8241423370785519">
+    <variables xmlns="https://developers.google.com/blockly/xml">
+      <variable id="[5L:IZg/GUqZ4n3S/,4[">camera_moving</variable>
+    </variables>
+    <block xmlns="https://developers.google.com/blockly/xml" type="setHTMLElemStyle" id="#+)J:m,Q*HIm1bsSSVy)" x="189" y="-468">
+      <field name="PROPERTY">display</field>
+      <field name="PARENT">TRUE</field>
+      <value name="VALUE">
+        <block type="text" id="4%1Uj4xHXtd{X+@;I($:">
+          <field name="TEXT">block</field>
+        </block>
+      </value>
+      <value name="ID">
+        <block type="lists_create_with" id="9kg#:fatf_XmcRZg]z|;">
+          <mutation items="2"></mutation>
+          <value name="ADD0">
+            <block type="text" id="Uicr-VwDg0J7I{RV4W2/">
+              <field name="TEXT">left_panel</field>
+            </block>
+          </value>
+          <value name="ADD1">
+            <block type="text" id="Nfdz`aWufdF^~n]?)jn0">
+              <field name="TEXT">right_panel</field>
+            </block>
+          </value>
+        </block>
+      </value>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenMoved" id="+CX{@$a8GqrGY,XX~biJ" x="186" y="-351">
+      <value name="OBJECT">
+        <block type="getActiveCamera" id="k~{Y48h/{Yr8{jCy+b1."></block>
+      </value>
+      <value name="DELTA">
+        <shadow type="math_number" id=")?Y+.t{=@CtG_3kIA/dE">
+          <field name="NUM">0.001</field>
+        </shadow>
+      </value>
+      <statement name="DO_START">
+        <block type="variables_set" id="b$7/*LRp?][:|fta_fB{">
+          <field name="VAR" id="[5L:IZg/GUqZ4n3S/,4[">camera_moving</field>
+          <value name="VALUE">
+            <block type="logic_boolean" id=":tZM08MMi.M}dy6}$J/f">
+              <field name="BOOL">TRUE</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+      <statement name="DO_STOP">
+        <block type="variables_set" id="ZY54!KW;wJ#[u*uNiDvy">
+          <field name="VAR" id="[5L:IZg/GUqZ4n3S/,4[">camera_moving</field>
+          <value name="VALUE">
+            <block type="logic_boolean" id="DO_6ta!a/E~GDm#=C|71">
+              <field name="BOOL">FALSE</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="setTimeout" id="Xl_]yJOQ,)vP$u{eI55k" x="182" y="-163">
+      <value name="VALUE">
+        <shadow type="math_number" id="Mun3|YoiRjlb/E]_cmeM">
+          <field name="NUM">0.1</field>
+        </shadow>
+      </value>
+      <statement name="DO">
+        <block type="variables_set" id="!@-x__6Lb?k%:qdoHD,S">
+          <field name="VAR" id="[5L:IZg/GUqZ4n3S/,4[">camera_moving</field>
+          <value name="VALUE">
+            <block type="logic_boolean" id="4-{56:|;|8?!F+1?3w~x">
+              <field name="BOOL">TRUE</field>
+            </block>
+          </value>
+        </block>
+      </statement>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="setTimer" id="1Me:xu[N1glp:HU?n3xS" x="180" y="-52">
+      <value name="ID">
+        <shadow type="text" id="Ng@7/lFu%Ha-c|A3!Y9E">
+          <field name="TEXT">autorotate</field>
+        </shadow>
+      </value>
+      <value name="VALUE">
+        <shadow type="math_number" id="4?]COAt=x][@F-V@u$4A">
+          <field name="NUM">10</field>
+        </shadow>
+      </value>
+      <value name="REPEAT">
+        <shadow type="math_number" id="$9eD7$HKpr6OLuZ%|Pfe">
+          <field name="NUM">Infinity</field>
+        </shadow>
+      </value>
+      <statement name="DO">
+        <block type="autoRotateCamera" id="L$+yD0cw4*eimKm;r]*5">
+          <field name="ON_OFF">ON</field>
+          <value name="SPEED">
+            <shadow type="math_number" id="uCOpgL]6+P!A6kc|-M07">
+              <field name="NUM">2</field>
+            </shadow>
+          </value>
+        </block>
+      </statement>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenClicked" id="n}A]5q9uD+:V$s~e+WS." inline="false" x="182" y="71">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <field name="DOUBLE_CLICK">FALSE</field>
+      <field name="LEFT_BUTTON">TRUE</field>
+      <field name="MIDDLE_BUTTON">TRUE</field>
+      <field name="RIGHT_BUTTON">TRUE</field>
+      <value name="VALUE">
+        <block type="allObjectList" id="X)ET;Sg2Sv`IZefSa,^h"></block>
+      </value>
+      <statement name="DO">
+        <block type="autoRotateCamera" id="Fgc]%YM#Ngl0*eMLevUW">
+          <field name="ON_OFF">OFF</field>
+          <value name="SPEED">
+            <shadow type="math_number" id="$!:S9AUCSBn}J6DByk!b">
+              <field name="NUM">2</field>
+            </shadow>
+            <block type="math_number" id="0]4@V^c3lm#.)lP6VlRk">
+              <field name="NUM">10</field>
+            </block>
+          </value>
+          <next>
+            <block type="setTimer" id="Fz%]6HX8}vHZfP,mSV%s">
+              <value name="ID">
+                <shadow type="text" id=")~LuZo3-lA*?}MvpaB?K">
+                  <field name="TEXT">autorotate</field>
+                </shadow>
+              </value>
+              <value name="VALUE">
+                <shadow type="math_number" id="A15sK1VYD:y7R`FsX{d{">
+                  <field name="NUM">10</field>
+                </shadow>
+              </value>
+              <value name="REPEAT">
+                <shadow type="math_number" id="F~rdHCd|c|?*FYu$Upgc">
+                  <field name="NUM">Infinity</field>
+                </shadow>
+              </value>
+              <statement name="DO">
+                <block type="autoRotateCamera" id="6ho)i{ouB~2+iFiK4!^B">
+                  <field name="ON_OFF">ON</field>
+                  <value name="SPEED">
+                    <shadow type="math_number" id="wh}#i0P%NG_Op=Lv}Y0;">
+                      <field name="NUM">2</field>
+                    </shadow>
+                  </value>
+                </block>
+              </statement>
+            </block>
+          </next>
+        </block>
+      </statement>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="hide" id="d[`?JV}}0avIeQ77o.7c" x="181" y="264">
+      <value name="VALUE">
+        <shadow type="objectList" id="yR[oVs|3LCQT$X|prt?P">
+          <field name="FIELDNAME">obj_popup</field>
+        </shadow>
+      </value>
+      <next>
+        <block type="whenHovered" id="3Pc}+?9+AyK]~RJXmV.~" inline="false">
+          <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false"></mutation>
+          <field name="X_RAY">FALSE</field>
+          <value name="VALUE">
+            <shadow type="objectList" id="Bym:(yOi$ZQwr3CDPscd">
+              <field name="FIELDNAME">obj_prodFront</field>
+            </shadow>
+          </value>
+          <statement name="DO_OVER">
+            <block type="show" id="D,Qh$f4F~6!sm;E_8Wsn">
+              <value name="VALUE">
+                <shadow type="objectList" id="(|y}t*[EE;~cqot*`P%E">
+                  <field name="FIELDNAME">obj_popup</field>
+                </shadow>
+              </value>
+              <next>
+                <block type="setHTMLElemStyle" id="52@%ko[=-KT:K1kWCHG#">
+                  <field name="PROPERTY">cursor</field>
+                  <field name="PARENT">FALSE</field>
+                  <value name="VALUE">
+                    <shadow type="cursorDropdown" id="3=;XF)2}y3(h@d7RJ1U@">
+                      <field name="TEXT">pointer</field>
+                    </shadow>
+                  </value>
+                  <value name="ID">
+                    <shadow type="text" id="Cb}-|_A4Vua#HSKNQq)+">
+                      <field name="TEXT">myElem</field>
+                    </shadow>
+                    <block type="DOMObjectSelector" id=":^61BgwskXqEqF|ihWE7">
+                      <field name="DOM_OBJECT">BODY</field>
+                    </block>
+                  </value>
+                </block>
+              </next>
+            </block>
+          </statement>
+          <statement name="DO_OUT">
+            <block type="hide" id="f!FMR;yes~!frf?!^h}-">
+              <value name="VALUE">
+                <shadow type="objectList" id="+Hg?lUFGDNuvqObhmpX_">
+                  <field name="FIELDNAME">obj_popup</field>
+                </shadow>
+              </value>
+              <next>
+                <block type="setHTMLElemStyle" id="iuxw513_Ab(l@`$N4k2u">
+                  <field name="PROPERTY">cursor</field>
+                  <field name="PARENT">FALSE</field>
+                  <value name="VALUE">
+                    <shadow type="cursorDropdown" id="TvQ7tAw]3p[NWbs?q!:(">
+                      <field name="TEXT">default</field>
+                    </shadow>
+                  </value>
+                  <value name="ID">
+                    <shadow type="text" id="c]4wv^A@yBA6eh9p=0|^">
+                      <field name="TEXT">myElem</field>
+                    </shadow>
+                    <block type="DOMObjectSelector" id="cS}0kd1O{=5{PSg3D3,t">
+                      <field name="DOM_OBJECT">BODY</field>
+                    </block>
+                  </value>
+                </block>
+              </next>
+            </block>
+          </statement>
+        </block>
+      </next>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="execScript" id="QRD69fM.Z`U9P4qsP?8l" disabled="true" x="1249" y="437">
+      <value name="TEXT">
+        <shadow type="textMultiline" id="%FlYGqT6gLQf8Kn/fkWJ">
+          <field name="HIGHLIGHT_MODE">javascript</field>
+          <field name="TEXT" editor-height="25" editor-width="852.2806320520505">// === SCROLL + HOVER AUTO-START ===&amp;#10;(function() {&amp;#10;    // Aspetta che Verge3D sia pronto&amp;#10;    function init() {&amp;#10;        if (typeof app === 'undefined') {&amp;#10;            setTimeout(init, 100);&amp;#10;            return;&amp;#10;        }&amp;#10;        &amp;#10;        const objProdFront = app.scene.getObjectByName('obj_prodFront');&amp;#10;        const objPopup = app.scene.getObjectByName('obj_popup');&amp;#10;        const elmCentro = app.scene.getObjectByName('elm_centro');&amp;#10;        &amp;#10;        // Nascondi popup&amp;#10;        if (objPopup) objPopup.visible = false;&amp;#10;        &amp;#10;        // Disabilita zoom&amp;#10;        if (app.controls) app.controls.enableZoom = false;&amp;#10;        &amp;#10;        // SCROLL&amp;#10;        window.addEventListener('wheel', (e) =&gt; {&amp;#10;            if (elmCentro) {&amp;#10;                elmCentro.rotation.x += e.deltaY * 0.0002;&amp;#10;                elmCentro.rotation.y += e.deltaY * 0.0001;&amp;#10;            }&amp;#10;        }, { passive: true });&amp;#10;        &amp;#10;        // HOVER&amp;#10;        const raycaster = new THREE.Raycaster();&amp;#10;        const mouse = new THREE.Vector2();&amp;#10;        window.addEventListener('mousemove', (e) =&gt; {&amp;#10;            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;&amp;#10;            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;&amp;#10;            raycaster.setFromCamera(mouse, app.scene.activeCamera);&amp;#10;            const intersects = raycaster.intersectObjects([objProdFront], true);&amp;#10;            objPopup.visible = intersects.length &gt; 0;&amp;#10;        }, { passive: true });&amp;#10;    }&amp;#10;    &amp;#10;    init();&amp;#10;})();&amp;#10;</field>
+        </shadow>
+      </value>
+    </block>
+  </tab>
+  <editorsettings viewport-x="946.1999999999999" viewport-y="37" viewport-w="642.8" viewport-h="471" viewport-hidden="false" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
+</xml>

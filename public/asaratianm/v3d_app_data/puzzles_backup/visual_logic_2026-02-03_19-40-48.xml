@@ -25,7 +25,7 @@
       </value>
     </block>
   </tab>
-  <tab name="main" type="CommonTab" active="true" scrollx="-185.53250543179263" scrolly="503.22226671785074" scale="0.7946250301766259">
+  <tab name="main" type="CommonTab" active="false" scrollx="-22.53250543179263" scrolly="457.22226671785074" scale="0.7946250301766259">
     <variables xmlns="https://developers.google.com/blockly/xml">
       <variable id="[5L:IZg/GUqZ4n3S/,4[">camera_moving</variable>
       <variable id=".gx{4,l];xMw.|-e`|.,">material_changing</variable>
@@ -72,7 +72,7 @@
         </shadow>
       </value>
     </block>
-    <block xmlns="https://developers.google.com/blockly/xml" type="whenMoved" id="+CX{@$a8GqrGY,XX~biJ" x="186" y="-361">
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenMoved" id="+CX{@$a8GqrGY,XX~biJ" x="186" y="-351">
       <value name="OBJECT">
         <block type="getActiveCamera" id="k~{Y48h/{Yr8{jCy+b1."></block>
       </value>
@@ -119,7 +119,87 @@
         </block>
       </statement>
     </block>
-    <block xmlns="https://developers.google.com/blockly/xml" type="everyFrame" id="WQVMg/=59oC)2selE+#L" x="881" y="-141">
+    <block xmlns="https://developers.google.com/blockly/xml" type="setTimer" id="1Me:xu[N1glp:HU?n3xS" x="180" y="-52">
+      <value name="ID">
+        <shadow type="text" id="Ng@7/lFu%Ha-c|A3!Y9E">
+          <field name="TEXT">autorotate</field>
+        </shadow>
+      </value>
+      <value name="VALUE">
+        <shadow type="math_number" id="4?]COAt=x][@F-V@u$4A">
+          <field name="NUM">5</field>
+        </shadow>
+      </value>
+      <value name="REPEAT">
+        <shadow type="math_number" id="$9eD7$HKpr6OLuZ%|Pfe">
+          <field name="NUM">Infinity</field>
+        </shadow>
+      </value>
+      <statement name="DO">
+        <block type="autoRotateCamera" id="L$+yD0cw4*eimKm;r]*5">
+          <field name="ON_OFF">ON</field>
+          <value name="SPEED">
+            <shadow type="math_number" id="uCOpgL]6+P!A6kc|-M07">
+              <field name="NUM">2</field>
+            </shadow>
+          </value>
+        </block>
+      </statement>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="whenClicked" id="n}A]5q9uD+:V$s~e+WS." inline="false" x="182" y="71">
+      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
+      <field name="X_RAY">FALSE</field>
+      <field name="DOUBLE_CLICK">FALSE</field>
+      <field name="LEFT_BUTTON">TRUE</field>
+      <field name="MIDDLE_BUTTON">TRUE</field>
+      <field name="RIGHT_BUTTON">TRUE</field>
+      <value name="VALUE">
+        <block type="allObjectList" id="X)ET;Sg2Sv`IZefSa,^h"></block>
+      </value>
+      <statement name="DO">
+        <block type="autoRotateCamera" id="Fgc]%YM#Ngl0*eMLevUW">
+          <field name="ON_OFF">OFF</field>
+          <value name="SPEED">
+            <shadow type="math_number" id="$!:S9AUCSBn}J6DByk!b">
+              <field name="NUM">2</field>
+            </shadow>
+            <block type="math_number" id="0]4@V^c3lm#.)lP6VlRk">
+              <field name="NUM">10</field>
+            </block>
+          </value>
+          <next>
+            <block type="setTimer" id="Fz%]6HX8}vHZfP,mSV%s">
+              <value name="ID">
+                <shadow type="text" id=")~LuZo3-lA*?}MvpaB?K">
+                  <field name="TEXT">autorotate</field>
+                </shadow>
+              </value>
+              <value name="VALUE">
+                <shadow type="math_number" id="A15sK1VYD:y7R`FsX{d{">
+                  <field name="NUM">5</field>
+                </shadow>
+              </value>
+              <value name="REPEAT">
+                <shadow type="math_number" id="F~rdHCd|c|?*FYu$Upgc">
+                  <field name="NUM">Infinity</field>
+                </shadow>
+              </value>
+              <statement name="DO">
+                <block type="autoRotateCamera" id="6ho)i{ouB~2+iFiK4!^B">
+                  <field name="ON_OFF">ON</field>
+                  <value name="SPEED">
+                    <shadow type="math_number" id="wh}#i0P%NG_Op=Lv}Y0;">
+                      <field name="NUM">2</field>
+                    </shadow>
+                  </value>
+                </block>
+              </statement>
+            </block>
+          </next>
+        </block>
+      </statement>
+    </block>
+    <block xmlns="https://developers.google.com/blockly/xml" type="everyFrame" id="WQVMg/=59oC)2selE+#L" x="873" y="131">
       <statement name="DO">
         <block type="controls_if" id="-=wD;sBEN.;|b%4kA*#d">
           <mutation else="1"></mutation>
@@ -189,139 +269,7 @@
         </block>
       </statement>
     </block>
-    <block xmlns="https://developers.google.com/blockly/xml" type="setTimer" id="1Me:xu[N1glp:HU?n3xS" x="180" y="-52">
-      <value name="ID">
-        <shadow type="text" id="Ng@7/lFu%Ha-c|A3!Y9E">
-          <field name="TEXT">autorotate</field>
-        </shadow>
-      </value>
-      <value name="VALUE">
-        <shadow type="math_number" id="4?]COAt=x][@F-V@u$4A">
-          <field name="NUM">5</field>
-        </shadow>
-      </value>
-      <value name="REPEAT">
-        <shadow type="math_number" id="$9eD7$HKpr6OLuZ%|Pfe">
-          <field name="NUM">Infinity</field>
-        </shadow>
-      </value>
-      <statement name="DO">
-        <block type="autoRotateCamera" id="L$+yD0cw4*eimKm;r]*5">
-          <field name="ON_OFF">ON</field>
-          <value name="SPEED">
-            <shadow type="math_number" id="uCOpgL]6+P!A6kc|-M07">
-              <field name="NUM">2</field>
-            </shadow>
-          </value>
-        </block>
-      </statement>
-    </block>
-    <block xmlns="https://developers.google.com/blockly/xml" type="whenClicked" id="n}A]5q9uD+:V$s~e+WS." inline="false" x="182" y="71">
-      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
-      <field name="X_RAY">FALSE</field>
-      <field name="DOUBLE_CLICK">FALSE</field>
-      <field name="LEFT_BUTTON">TRUE</field>
-      <field name="MIDDLE_BUTTON">TRUE</field>
-      <field name="RIGHT_BUTTON">TRUE</field>
-      <value name="VALUE">
-        <block type="allObjectList" id="X)ET;Sg2Sv`IZefSa,^h"></block>
-      </value>
-      <statement name="DO">
-        <block type="autoRotateCamera" id="Fgc]%YM#Ngl0*eMLevUW">
-          <field name="ON_OFF">OFF</field>
-          <value name="SPEED">
-            <shadow type="math_number" id="$!:S9AUCSBn}J6DByk!b">
-              <field name="NUM">2</field>
-            </shadow>
-            <block type="math_number" id="0]4@V^c3lm#.)lP6VlRk">
-              <field name="NUM">10</field>
-            </block>
-          </value>
-          <next>
-            <block type="zoomCameraToObject" id="RB7+yEbmON}Z`EPK@oOp" disabled="true">
-              <mutation xmlns="http://www.w3.org/1999/xhtml" whenfinishedslot="false"></mutation>
-              <value name="OBJECT">
-                <shadow type="objectList" id="CA]4g`,HyQ/~{WZYwReG">
-                  <field name="FIELDNAME">elm_centro</field>
-                </shadow>
-              </value>
-              <value name="DURATION">
-                <shadow type="math_number" id=")Sc#oj.!Lx{+WZVo1]Wu">
-                  <field name="NUM">1</field>
-                </shadow>
-              </value>
-              <next>
-                <block type="lookAt" id="{Z@=VyV!klz0Gn5kL5Vz" disabled="true">
-                  <value name="LOOKAT">
-                    <shadow type="objectList" id=",gUd,d@v,ah}Rf?-2EL$">
-                      <field name="FIELDNAME">obj_Info</field>
-                    </shadow>
-                  </value>
-                  <value name="DURATION">
-                    <shadow type="math_number" id="^h5=#r3)*XAJ.f.v(^YI">
-                      <field name="NUM">1</field>
-                    </shadow>
-                  </value>
-                  <next>
-                    <block type="setTimer" id="Fz%]6HX8}vHZfP,mSV%s">
-                      <value name="ID">
-                        <shadow type="text" id=")~LuZo3-lA*?}MvpaB?K">
-                          <field name="TEXT">autorotate</field>
-                        </shadow>
-                      </value>
-                      <value name="VALUE">
-                        <shadow type="math_number" id="A15sK1VYD:y7R`FsX{d{">
-                          <field name="NUM">5</field>
-                        </shadow>
-                      </value>
-                      <value name="REPEAT">
-                        <shadow type="math_number" id="F~rdHCd|c|?*FYu$Upgc">
-                          <field name="NUM">Infinity</field>
-                        </shadow>
-                      </value>
-                      <statement name="DO">
-                        <block type="autoRotateCamera" id="6ho)i{ouB~2+iFiK4!^B">
-                          <field name="ON_OFF">ON</field>
-                          <value name="SPEED">
-                            <shadow type="math_number" id="wh}#i0P%NG_Op=Lv}Y0;">
-                              <field name="NUM">2</field>
-                            </shadow>
-                          </value>
-                        </block>
-                      </statement>
-                    </block>
-                  </next>
-                </block>
-              </next>
-            </block>
-          </next>
-        </block>
-      </statement>
-    </block>
-    <block xmlns="https://developers.google.com/blockly/xml" type="whenClicked" id="+lY|Q]Xr[=PmPHh/.b33" inline="false" x="822" y="89">
-      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
-      <field name="X_RAY">FALSE</field>
-      <field name="DOUBLE_CLICK">FALSE</field>
-      <field name="LEFT_BUTTON">TRUE</field>
-      <field name="MIDDLE_BUTTON">TRUE</field>
-      <field name="RIGHT_BUTTON">TRUE</field>
-      <value name="VALUE">
-        <shadow type="objectList" id="$dg[{@L5j4Jlx|aJ[NK+">
-          <field name="FIELDNAME">obj_prodFront</field>
-        </shadow>
-      </value>
-      <statement name="DO">
-        <block type="execScript" id="g_sGHFZVHSHi;6|Hihhf">
-          <value name="TEXT">
-            <shadow type="textMultiline" id="Lkd=uxCq@MoKJBK4=deS">
-              <field name="HIGHLIGHT_MODE">javascript</field>
-              <field name="TEXT" editor-height="11" editor-width="717.7177715292711">console.log("Click su bottone!")&amp;#10;&amp;#10;// Bottone di scelta della modalità di pagamento&amp;#10;window.parent.postMessage({ action: "openPaymentModal" }, "*");&amp;#10;&amp;#10;window.parent.postMessage({&amp;#10;    action: "openPaymentModal",&amp;#10;    filename: "ebook.epub",&amp;#10;    filetype: "eBook in formato .epub"&amp;#10;}, "*");</field>
-            </shadow>
-          </value>
-        </block>
-      </statement>
-    </block>
-    <block xmlns="https://developers.google.com/blockly/xml" type="hide" id="d[`?JV}}0avIeQ77o.7c" x="180" y="306">
+    <block xmlns="https://developers.google.com/blockly/xml" type="hide" id="d[`?JV}}0avIeQ77o.7c" x="181" y="264">
       <value name="VALUE">
         <shadow type="objectList" id="yR[oVs|3LCQT$X|prt?P">
           <field name="FIELDNAME">obj_Info</field>
@@ -404,7 +352,7 @@
       </value>
     </block>
   </tab>
-  <tab name="scroll" type="CommonTab" active="false" scrollx="1318.1884526004874" scrolly="784.2321573674441" scale="0.8962653227056504">
+  <tab name="scroll" type="CommonTab" active="true" scrollx="1388.763829049742" scrolly="395.2450835667337" scale="0.9917000470725148">
     <variables xmlns="https://developers.google.com/blockly/xml">
       <variable id="6:EP=bld}4-(9{3q3uLw">input_range_start</variable>
       <variable id="Okq8aCYJC})d]WmNLsY[">input_range_end</variable>
@@ -1497,5 +1445,5 @@
       </statement>
     </block>
   </tab>
-  <editorsettings viewport-x="946.1999999999999" viewport-y="37" viewport-w="642.8" viewport-h="471" viewport-hidden="true" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
+  <editorsettings viewport-x="946.1999999999999" viewport-y="37" viewport-w="642.8" viewport-h="471" viewport-hidden="false" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
 </xml>

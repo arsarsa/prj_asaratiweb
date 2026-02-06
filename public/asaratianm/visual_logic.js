@@ -1,1 +1,1078 @@
-function createPL(e=window.v3d){const n={percentage:0,output:{initOptions:{fadeAnnotations:!0,useBkgTransp:!1,preserveDrawBuf:!1,useCompAssets:!1,useFullscreen:!0,useCustomPreloader:!1,preloaderStartCb:function(){},preloaderProgressCb:function(){},preloaderEndCb:function(){}}}};var t={objCache:{},fadeAnnotations:!0,pickedObject:"",hoveredObject:"",mediaElements:{},loadedFile:"",states:[],percentage:0,openedFile:"",openedFileMeta:{},xrSessionAcquired:!1,xrSessionCallbacks:[]};t.screenCoords=new e.Vector2,t.intervalTimers={},t.customEvents=new e.EventDispatcher,t.eventListeners=[],t.htmlElements=new Set,t.materialsCache=new Map,t.AXIS_X=new e.Vector3(1,0,0),t.AXIS_Y=new e.Vector3(0,1,0),t.AXIS_Z=new e.Vector3(0,0,1),t.MIN_DRAG_SCALE=.001,t.SET_OBJ_ROT_EPS=1e-8,t.vec2Tmp=new e.Vector2,t.vec2Tmp2=new e.Vector2,t.vec3Tmp=new e.Vector3,t.vec3Tmp2=new e.Vector3,t.vec3Tmp3=new e.Vector3,t.vec3Tmp4=new e.Vector3,t.eulerTmp=new e.Euler,t.eulerTmp2=new e.Euler,t.quatTmp=new e.Quaternion,t.quatTmp2=new e.Quaternion,t.colorTmp=new e.Color,t.mat4Tmp=new e.Matrix4,t.planeTmp=new e.Plane,t.raycasterTmp=new e.Raycaster;const o=({v3d:e=null,appInstance:o=null})=>{function r(e,t=!1){let r;if(Array.isArray(e)&&"CONTAINER"===e[0]){if(null!==o)r=o.container;else if(void 0!==n){const e=n.container;r=t?parent.document.getElementById(e):document.getElementById(e)}}else r=Array.isArray(e)&&"WINDOW"===e[0]?t?parent:window:Array.isArray(e)&&"DOCUMENT"===e[0]?t?parent.document:document:Array.isArray(e)&&"BODY"===e[0]?t?parent.document.body:document.body:Array.isArray(e)&&"QUERYSELECTOR"===e[0]?t?parent.document.querySelector(e):document.querySelector(e):t?parent.document.getElementById(e):document.getElementById(e);return r}function i(e,n,o,r){t.eventListeners.some(t=>function(e,n,t,o,r,i,c,a){const s=Boolean(o instanceof Object?o.capture:o),l=Boolean(a instanceof Object?a.capture:a);return e===r&&n===i&&t===c&&s===l}(t.target,t.type,t.listener,t.optionsOrUseCapture,e,n,o,r))||(e.addEventListener(n,o,r),t.eventListeners.push({target:e,type:n,listener:o,optionsOrUseCapture:r}))}function c(e){return!("AmbientLight"===e.type||""===e.name||e.isMesh&&e.isMaterialGeneratedMesh||e.isAuxClippingMesh)}function a(e){let n=null;const r=void 0!==t;return r&&e in t.objCache&&(n=t.objCache[e]||null),n&&n.name===e||o.scene&&o.scene.traverse(o=>{!n&&c(o)&&o.name===e&&(n=o,r&&(t.objCache[e]=n))}),n}function s(e,n){if("string"==typeof e)n.push(e);else if(Array.isArray(e)&&"GROUP"===e[0]){const t=function(e){const n=[];return o.scene.traverse(t=>{if(c(t)){const o=t.groupNames;if(!o)return;for(let r=0;r<o.length;r++)o[r]===e&&n.push(t.name)}}),n}(e[1]);for(let e=0;e<t.length;e++)n.push(t[e])}else if(Array.isArray(e)&&"ALL_OBJECTS"===e[0]){const e=function(){const e=[];return o.scene.traverse(n=>{c(n)&&e.push(n.name)}),e}();for(let t=0;t<e.length;t++)n.push(e[t])}else if(Array.isArray(e))for(let t=0;t<e.length;t++)s(e[t],n)}return{getElements:function(e,n=!1){const t=[];if(Array.isArray(e)&&"CONTAINER"!==e[0]&&"WINDOW"!==e[0]&&"DOCUMENT"!==e[0]&&"BODY"!==e[0]&&"QUERYSELECTOR"!==e[0])for(let o=0;o<e.length;o++)t.push(r(e[o],n));else t.push(r(e,n));return t},getObjectName:function(e){return e.isMesh&&e.isMaterialGeneratedMesh&&e.parent?e.parent.name:e.name},initObjectPicking:function(n,r,c=!1,a=null){const s=o.renderer.domElement;if(i(s,r,u),"mousedown"===r)i(s,c?"touchstart":"touchend",u);else if("dblclick"===r){let e=0;i(s,c?"touchstart":"touchend",function(n){const t=(new Date).getTime()-e;if(t<600&&t>0)return u(n),void(e=0);e=(new Date).getTime()})}const l=new e.Raycaster;function u(e){if(!o.getCamera())return;e.preventDefault();let r=0,i=0;if(e instanceof MouseEvent){if(null!==a&&-1===a.indexOf(e.button))return;r=e.offsetX/s.clientWidth,i=e.offsetY/s.clientHeight}else if(e instanceof TouchEvent){const n=s.getBoundingClientRect();r=(e.changedTouches[0].clientX-n.left)/n.width,i=(e.changedTouches[0].clientY-n.top)/n.height}t.screenCoords.x=2*r-1,t.screenCoords.y=2*-i+1,l.setFromCamera(t.screenCoords,o.getCamera(!0));const c=[];o.scene.traverse(e=>c.push(e));const u=l.intersectObjects(c,!1);n(u,e)}},isObjectAmongObjects:function(e,n){if(!e)return!1;for(let t=0;t<n.length;t++){if(e===n[t])return!0;{const o=a(n[t]);if(o&&"Group"===o.type)for(let n=0;n<o.children.length;n++)if(e===o.children[n].name)return!0}}return!1},retrieveObjectNames:function(e){const n=[];return s(e,n),n.filter(e=>""!==e)}}};var r={};return"Module"!==e[Symbol.toStringTag]&&(e.PL=e.puzzles=r),r.procedures=r.procedures||{},r.execInitPuzzles=function(t){return o({v3d:e}),n.container=void 0!==t&&"container"in t?t.container:"",n.output},r.init=function(n,i){const c=o({v3d:e,appInstance:n});"fadeAnnotations"in(i=i||{})&&(t.fadeAnnotations=i.fadeAnnotations);var a={},s=Object.defineProperties({},{});function l(e,n,t,o){for(var r=c.getElements(t,o),i=0;i<r.length;i++){var a=r[i];a&&a.style&&(a.style[e]=n)}}function u(e,n,o,r){t.objHoverInfo=t.objHoverInfo||[],t.objHoverInfo.push({objSelector:e,callbacks:[o,r],xRay:n})}function p(e,n,o,r,i,a){t.objClickInfo=t.objClickInfo||[],t.objClickInfo.push({objSelector:e,callbacks:[i,a]}),c.initObjectPicking(function(o,r){for(var s=!1,l=n?o.length:Math.min(1,o.length),u=0;u<l;u++){var p=o[u].object,f=c.getObjectName(p),d=c.retrieveObjectNames(e);c.isObjectAmongObjects(f,d)&&(t.pickedObject=f,s=!0,i(r))}s||(t.pickedObject="",a(r))},o?"dblclick":"mousedown",!1,r)}c.initObjectPicking(function(e,n){var o=t.hoveredObject,r="";t.objHoverInfo=t.objHoverInfo||[];var i=1/0;t.objHoverInfo.forEach(function(n){for(var t=n.xRay?e.length:Math.min(1,e.length),o=0;o<t;o++){var a=e[o].object,s=c.getObjectName(a);c.isObjectAmongObjects(s,c.retrieveObjectNames(n.objSelector))&&o<=i&&(r=s,i=o)}}),o!=r&&(t.objHoverInfo.forEach(function(e){c.isObjectAmongObjects(o,c.retrieveObjectNames(e.objSelector))&&(t.hoveredObject=o,e.callbacks[1](n))}),t.objHoverInfo.forEach(function(e){c.isObjectAmongObjects(r,c.retrieveObjectNames(e.objSelector))&&(t.hoveredObject=r,e.callbacks[0](n))}),t.hoveredObject=r)},"mousemove"),u("eBook_Front",!1,function(){l("cursor","pointer",["BODY"],!1)},function(){l("cursor","default",["BODY"],!1)}),p("eBook_Front",!1,!1,[0,1,2],function(){Function("app","v3d","puzzles","VARS","PROC",'console.log("Click su bottone!")\n\n// Bottone di scelta della modalità di pagamento\nwindow.parent.postMessage({ action: "openPaymentModal" }, "*");\n\nwindow.parent.postMessage({\n    action: "openPaymentModal",\n    filename: "ebook.epub",\n    filetype: "eBook in formato .epub"\n}, "*");')(n,e,r,s,a)},function(){}),u("audioBook_Front",!1,function(){l("cursor","pointer",["BODY"],!1)},function(){l("cursor","default",["BODY"],!1)}),p("audioBook_Front",!1,!1,[0,1,2],function(){Function("app","v3d","puzzles","VARS","PROC",'console.log("audioBook_Front cliccato!");\n\n// Invio al parent (pagina HTML) il comando per aprire la modale di pagamento\nwindow.parent.postMessage({\n    action: "openPaymentModal",\n    filename: "audiobook.mp3",\n    filetype: "audioBook in formato .mp3"\n}, "*");\n')(n,e,r,s,a)},function(){}),u("boxBook_Front",!1,function(){l("cursor","pointer",["BODY"],!1)},function(){l("cursor","default",["BODY"],!1)}),p("boxBook_Front",!1,!1,[0,1,2],function(){Function("app","v3d","puzzles","VARS","PROC",'console.log("boxBook_Front cliccato!");\n\n// Invio al parent (pagina HTML) il comando per aprire la modale di pagamento\nwindow.parent.postMessage({\n    action: "openPaymentModal",\n    filename: "boxbook.zip",\n    filetype: "boxBook in formato .zip"\n}, "*");\n')(n,e,r,s,a)},function(){})},r.disposeListeners=function(){t&&(t.eventListeners.forEach(({target:e,type:n,listener:t,optionsOrUseCapture:o})=>{e.removeEventListener(n,t,o)}),t.eventListeners.length=0)},r.disposeHTMLElements=function(){t&&(t.htmlElements.forEach(e=>{e.remove()}),t.htmlElements.clear())},r.disposeMaterialsCache=function(){if(t){for(const e of t.materialsCache.values())e.dispose();t.materialsCache.clear()}},r.dispose=function(){r.disposeListeners(),r.disposeHTMLElements(),r.disposeMaterialsCache(),t=null,"Module"!==e[Symbol.toStringTag]&&(delete e.PL,delete e.puzzles)},r}export{createPL};
+/* eslint-disable */
+
+/**
+ * Generated by Verge3D Puzzles v.4.8.0
+ * Wed, 04 Feb 2026 05:46:35 GMT
+ * Prefer not editing this file as your changes may get overridden once Puzzles are saved.
+ * Check out https://www.soft8soft.com/docs/manual/en/introduction/Using-JavaScript.html
+ * for the information on how to add your own JavaScript to Verge3D apps.
+ */
+function createPL(v3d = window.v3d) {
+
+// global variables used in the init tab
+const _initGlob = {
+    percentage: 0,
+    output: {
+        initOptions: {
+            fadeAnnotations: true,
+            useBkgTransp: false,
+            preserveDrawBuf: false,
+            useCompAssets: false,
+            useFullscreen: true,
+            useCustomPreloader: false,
+            preloaderStartCb: function() {},
+            preloaderProgressCb: function() {},
+            preloaderEndCb: function() {},
+        },
+    },
+};
+
+
+// global variables/constants used by puzzles' functions
+var _pGlob = {};
+
+_pGlob.objCache = {};
+_pGlob.fadeAnnotations = true;
+_pGlob.pickedObject = '';
+_pGlob.hoveredObject = '';
+_pGlob.mediaElements = {};
+_pGlob.loadedFile = '';
+_pGlob.states = [];
+_pGlob.percentage = 0;
+_pGlob.openedFile = '';
+_pGlob.openedFileMeta = {};
+_pGlob.xrSessionAcquired = false;
+_pGlob.xrSessionCallbacks = [];
+_pGlob.screenCoords = new v3d.Vector2();
+_pGlob.intervalTimers = {};
+_pGlob.customEvents = new v3d.EventDispatcher();
+_pGlob.eventListeners = [];
+_pGlob.htmlElements = new Set();
+_pGlob.materialsCache = new Map();
+
+_pGlob.AXIS_X = new v3d.Vector3(1, 0, 0);
+_pGlob.AXIS_Y = new v3d.Vector3(0, 1, 0);
+_pGlob.AXIS_Z = new v3d.Vector3(0, 0, 1);
+_pGlob.MIN_DRAG_SCALE = 10e-4;
+_pGlob.SET_OBJ_ROT_EPS = 1e-8;
+
+_pGlob.vec2Tmp = new v3d.Vector2();
+_pGlob.vec2Tmp2 = new v3d.Vector2();
+_pGlob.vec3Tmp = new v3d.Vector3();
+_pGlob.vec3Tmp2 = new v3d.Vector3();
+_pGlob.vec3Tmp3 = new v3d.Vector3();
+_pGlob.vec3Tmp4 = new v3d.Vector3();
+_pGlob.eulerTmp = new v3d.Euler();
+_pGlob.eulerTmp2 = new v3d.Euler();
+_pGlob.quatTmp = new v3d.Quaternion();
+_pGlob.quatTmp2 = new v3d.Quaternion();
+_pGlob.colorTmp = new v3d.Color();
+_pGlob.mat4Tmp = new v3d.Matrix4();
+_pGlob.planeTmp = new v3d.Plane();
+_pGlob.raycasterTmp = new v3d.Raycaster(); // always check visibility
+
+const createPzLib = ({ v3d=null, appInstance=null }) => {
+    function getElement(id, isParent=false) {
+        let elem;
+        if (Array.isArray(id) && id[0] === 'CONTAINER') {
+            if (appInstance !== null) {
+                elem = appInstance.container;
+            } else if (typeof _initGlob !== 'undefined') {
+                // if we are on the initialization stage, we still can have access
+                // to the container element
+                const contId = _initGlob.container;
+                elem = isParent ? parent.document.getElementById(contId)
+                        : document.getElementById(contId);
+            }
+        } else if (Array.isArray(id) && id[0] === 'WINDOW') {
+            elem = isParent ? parent : window;
+        } else if (Array.isArray(id) && id[0] === 'DOCUMENT') {
+            elem = isParent ? parent.document : document;
+        } else if (Array.isArray(id) && id[0] === 'BODY') {
+            elem = isParent ? parent.document.body : document.body;
+        } else if (Array.isArray(id) && id[0] === 'QUERYSELECTOR') {
+            elem = isParent ? parent.document.querySelector(id)
+                    : document.querySelector(id);
+        } else {
+            elem = isParent ? parent.document.getElementById(id)
+                    : document.getElementById(id);
+        }
+        return elem;
+    }
+        
+    function getElements(ids, isParent=false) {
+        const elems = [];
+        if (Array.isArray(ids) && ids[0] !== 'CONTAINER' && ids[0] !== 'WINDOW'
+                && ids[0] !== 'DOCUMENT' && ids[0] !== 'BODY'
+                && ids[0] !== 'QUERYSELECTOR') {
+            for (let i = 0; i < ids.length; i++) {
+                elems.push(getElement(ids[i], isParent));
+            }
+        } else {
+            elems.push(getElement(ids, isParent));
+        }
+        return elems;
+    }
+        
+    function isObjectWorthProcessing(obj) {
+        return obj.type !== 'AmbientLight' && obj.name !== '' &&
+                !(obj.isMesh && obj.isMaterialGeneratedMesh) &&
+                !obj.isAuxClippingMesh;
+    }
+        
+    function getObjectByName(objName) {
+        let objFound = null;
+    
+        const pGlobAvailable = _pGlob !== undefined;
+        if (pGlobAvailable && objName in _pGlob.objCache) {
+            objFound = _pGlob.objCache[objName] || null;
+        }
+    
+        if (objFound && objFound.name === objName) {
+            return objFound;
+        }
+    
+        if (appInstance.scene) {
+            appInstance.scene.traverse(obj => {
+                if (!objFound && isObjectWorthProcessing(obj) && (obj.name === objName)) {
+                    objFound = obj;
+                    if (pGlobAvailable) {
+                        _pGlob.objCache[objName] = objFound;
+                    }
+                }
+            });
+        }
+        return objFound;
+    }
+        
+    function getObjectNamesByGroupName(groupName) {
+        const objNameList = [];
+        appInstance.scene.traverse(obj => {
+            if (isObjectWorthProcessing(obj)) {
+                const objGroupNames = obj.groupNames;
+                if (!objGroupNames) {
+                    return;
+                }
+    
+                for (let i = 0; i < objGroupNames.length; i++) {
+                    const objGroupName = objGroupNames[i];
+                    if (objGroupName === groupName) {
+                        objNameList.push(obj.name);
+                    }
+                }
+            }
+        });
+        return objNameList;
+    }
+        
+    function getAllObjectNames() {
+        const objNameList = [];
+        appInstance.scene.traverse(obj => {
+            if (isObjectWorthProcessing(obj)) {
+                objNameList.push(obj.name);
+            }
+        });
+        return objNameList;
+    }
+        
+    function retrieveObjectNamesAccum(currObjNames, namesAccum) {
+        if (typeof currObjNames === 'string') {
+            namesAccum.push(currObjNames);
+        } else if (Array.isArray(currObjNames) && currObjNames[0] === 'GROUP') {
+            const newObjNames = getObjectNamesByGroupName(currObjNames[1]);
+            for (let i = 0; i < newObjNames.length; i++) {
+                namesAccum.push(newObjNames[i]);
+            }
+        } else if (Array.isArray(currObjNames) && currObjNames[0] === 'ALL_OBJECTS') {
+            const newObjNames = getAllObjectNames();
+            for (let i = 0; i < newObjNames.length; i++) {
+                namesAccum.push(newObjNames[i]);
+            }
+        } else if (Array.isArray(currObjNames)) {
+            for (let i = 0; i < currObjNames.length; i++) {
+                retrieveObjectNamesAccum(currObjNames[i], namesAccum);
+            }
+        }
+    }
+        
+    function retrieveObjectNames(objNames) {
+        const accum = [];
+        retrieveObjectNamesAccum(objNames, accum);
+        return accum.filter(name => name !== '');
+    }
+        
+    function getObjectName(obj) {
+        // auto-generated from a multi-material object, use parent name instead
+        if (obj.isMesh && obj.isMaterialGeneratedMesh && obj.parent) {
+            return obj.parent.name;
+        } else {
+            return obj.name;
+        }
+    }
+        
+    function areListenersSame(target0, type0, listener0, optionsOrUseCapture0,
+            target1, type1, listener1, optionsOrUseCapture1) {
+        const capture0 = Boolean(optionsOrUseCapture0 instanceof Object
+                ? optionsOrUseCapture0.capture : optionsOrUseCapture0);
+        const capture1 = Boolean(optionsOrUseCapture1 instanceof Object
+                ? optionsOrUseCapture1.capture : optionsOrUseCapture1);
+        return target0 === target1 && type0 === type1 && listener0 === listener1
+                && capture0 === capture1;
+    }
+        
+    function bindListener(target, type, listener, optionsOrUseCapture) {
+        const alreadyExists = _pGlob.eventListeners.some(elem => {
+            return areListenersSame(elem.target, elem.type, elem.listener,
+                    elem.optionsOrUseCapture, target, type, listener,
+                    optionsOrUseCapture);
+        });
+    
+        if (!alreadyExists) {
+            target.addEventListener(type, listener, optionsOrUseCapture);
+            _pGlob.eventListeners.push({ target, type, listener,
+                    optionsOrUseCapture });
+        }
+    }
+        
+    function initObjectPicking(callback, eventType, mouseDownUseTouchStart=false,
+            allowedMouseButtons=null) {
+    
+        const elem = appInstance.renderer.domElement;
+        bindListener(elem, eventType, pickListener);
+    
+        if (eventType === 'mousedown') {
+    
+            const touchEventName = mouseDownUseTouchStart ? 'touchstart' : 'touchend';
+            bindListener(elem, touchEventName, pickListener);
+    
+        } else if (eventType === 'dblclick') {
+    
+            let prevTapTime = 0;
+    
+            function doubleTapCallback(event) {
+                const now = new Date().getTime();
+                const timesince = now - prevTapTime;
+    
+                if (timesince < 600 && timesince > 0) {
+                    pickListener(event);
+                    prevTapTime = 0;
+                    return;
+                }
+    
+                prevTapTime = new Date().getTime();
+            }
+    
+            const touchEventName = mouseDownUseTouchStart ? 'touchstart' : 'touchend';
+            bindListener(elem, touchEventName, doubleTapCallback);
+        }
+    
+        const raycaster = new v3d.Raycaster();
+    
+        function pickListener(event) {
+    
+            // to handle unload in loadScene puzzle
+            if (!appInstance.getCamera()) {
+                return;
+            }
+    
+            event.preventDefault();
+    
+            let xNorm = 0;
+            let yNorm = 0;
+            if (event instanceof MouseEvent) {
+                if (allowedMouseButtons !== null && allowedMouseButtons.indexOf(event.button) === -1) {
+                    return;
+                }
+                xNorm = event.offsetX / elem.clientWidth;
+                yNorm = event.offsetY / elem.clientHeight;
+            } else if (event instanceof TouchEvent) {
+                const rect = elem.getBoundingClientRect();
+                xNorm = (event.changedTouches[0].clientX - rect.left) / rect.width;
+                yNorm = (event.changedTouches[0].clientY - rect.top) / rect.height;
+            }
+    
+            _pGlob.screenCoords.x = xNorm * 2 - 1;
+            _pGlob.screenCoords.y = -yNorm * 2 + 1;
+            raycaster.setFromCamera(_pGlob.screenCoords, appInstance.getCamera(true));
+    
+            const objList = [];
+            appInstance.scene.traverse(obj => objList.push(obj));
+    
+            const intersects = raycaster.intersectObjects(objList, false);
+            callback(intersects, event);
+        }
+    }
+        
+    function isObjectAmongObjects(objNameToCheck, objNames) {
+        if (!objNameToCheck) {
+            return false;
+        }
+    
+        for (let i = 0; i < objNames.length; i++) {
+            if (objNameToCheck === objNames[i]) {
+                return true;
+            } else {
+                // also check children which are auto-generated for multi-material objects
+                const obj = getObjectByName(objNames[i]);
+                if (obj && obj.type === 'Group') {
+                    for (let j = 0; j < obj.children.length; j++) {
+                        if (objNameToCheck === obj.children[j].name) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+        
+    function getSceneAnimFrameRate(scene) {
+        if (scene && 'animFrameRate' in scene.userData) {
+            return scene.userData.animFrameRate;
+        }
+        return 24;
+    }
+        
+    function getSceneByAction(action) {
+        const root = action.getRoot();
+        let scene = root.type === 'Scene' ? root : null;
+        root.traverseAncestors(ancObj => {
+            if (ancObj.type === 'Scene') {
+                scene = ancObj;
+            }
+        });
+        return scene;
+    }
+        
+    function getMaterialEditableColors(matName) {
+        const mat = v3d.SceneUtils.getMaterialByName(appInstance, matName);
+        if (!mat) {
+            return [];
+        }
+    
+        if (mat.isMeshNodeMaterial) {
+            return Object.keys(mat.nodeRGBMap);
+        } else if (mat.isMeshStandardMaterial) {
+            return ['color', 'emissive'];
+        } else {
+            return [];
+        }
+    }
+
+    return {
+        getElements, getObjectByName, retrieveObjectNames, getObjectName,
+        initObjectPicking, isObjectAmongObjects, getElement, bindListener,
+        getSceneAnimFrameRate, getSceneByAction, getMaterialEditableColors,
+    };
+};
+
+var PL = {};
+
+
+
+// backward compatibility
+if (v3d[Symbol.toStringTag] !== 'Module') {
+    v3d.PL = v3d.puzzles = PL;
+}
+
+PL.procedures = PL.procedures || {};
+
+
+
+
+PL.execInitPuzzles = function(options) {
+    // always null, should not be available in "init" puzzles
+    var appInstance = null;
+    // app is more conventional than appInstance (used in exec script and app templates)
+    var app = null;
+
+    const PzLib = createPzLib({ v3d });
+
+    // provide the container's id to puzzles that need access to the container
+    _initGlob.container = options !== undefined && 'container' in options
+            ? options.container : "";
+
+    
+
+    
+    return _initGlob.output;
+}
+
+PL.init = function(appInstance, initOptions) {
+
+// app is more conventional than appInstance (used in exec script and app templates)
+var app = appInstance;
+
+const PzLib = createPzLib({ v3d, appInstance });
+
+initOptions = initOptions || {};
+
+if ('fadeAnnotations' in initOptions) {
+    _pGlob.fadeAnnotations = initOptions.fadeAnnotations;
+}
+
+this.procedures["map_range"] = map_range;
+
+var PROC = {
+    "map_range": map_range,
+};
+
+var VARS = Object.defineProperties({}, {
+    'camera_moving': { get: function() { return camera_moving; }, set: function(val) { camera_moving = val; } },
+    'material_changing': { get: function() { return material_changing; }, set: function(val) { material_changing = val; } },
+    'animation_happens': { get: function() { return animation_happens; }, set: function(val) { animation_happens = val; } },
+    'input_range_start': { get: function() { return input_range_start; }, set: function(val) { input_range_start = val; } },
+    'input_range_end': { get: function() { return input_range_end; }, set: function(val) { input_range_end = val; } },
+    'result_range_start': { get: function() { return result_range_start; }, set: function(val) { result_range_start = val; } },
+    'result_range_end': { get: function() { return result_range_end; }, set: function(val) { result_range_end = val; } },
+    'input_value': { get: function() { return input_value; }, set: function(val) { input_value = val; } },
+    'result_range': { get: function() { return result_range; }, set: function(val) { result_range = val; } },
+    'output_value': { get: function() { return output_value; }, set: function(val) { output_value = val; } },
+    'page_scrolling': { get: function() { return page_scrolling; }, set: function(val) { page_scrolling = val; } },
+    'scroll_amount': { get: function() { return scroll_amount; }, set: function(val) { scroll_amount = val; } },
+});
+
+var input_range_start, input_range_end, result_range_start, result_range_end, input_value, camera_moving, result_range, output_value, page_scrolling, scroll_amount, material_changing, animation_happens;
+
+// setHTMLElemStyle puzzle
+function setHTMLElemStyle(prop, value, ids, isParent) {
+    var elems = PzLib.getElements(ids, isParent);
+    for (var i = 0; i < elems.length; i++) {
+        var elem = elems[i];
+        if (!elem || !elem.style)
+            continue;
+        elem.style[prop] = value;
+    }
+}
+
+// bloom puzzle
+function bloom(threshold, strength, radius) {
+    appInstance.enablePostprocessing([{
+        type: 'bloom',
+        threshold: threshold,
+        strength: strength,
+        radius: radius
+    }]);
+}
+
+// getActiveCamera puzzle
+function getActiveCamera() {
+    var camera = appInstance.getCamera();
+    return camera.name;
+}
+
+// whenMoved puzzle
+function whenMoved(objSelector, velocity, cbStart, cbMove, cbStop) {
+
+    _pGlob.objMovementInfos = _pGlob.objMovementInfos || {};
+
+    function savePreviousCoords(objName, obj, prevIsMoving) {
+        // GC optimization
+        if (_pGlob.objMovementInfos[objName]) {
+            var info = _pGlob.objMovementInfos[objName];
+
+            info.prevPosX = obj.position.x;
+            info.prevPosY = obj.position.y;
+            info.prevPosZ = obj.position.z;
+            info.prevRotX = obj.rotation.x;
+            info.prevRotY = obj.rotation.y;
+            info.prevRotZ = obj.rotation.z;
+            info.prevScaX = obj.scale.x;
+            info.prevScaY = obj.scale.y;
+            info.prevScaZ = obj.scale.z;
+            info.prevIsMoving = prevIsMoving;
+        } else {
+            var info = {
+                prevPosX: obj.position.x,
+                prevPosY: obj.position.y,
+                prevPosZ: obj.position.z,
+                prevRotX: obj.rotation.x,
+                prevRotY: obj.rotation.y,
+                prevRotZ: obj.rotation.z,
+                prevScaX: obj.scale.x,
+                prevScaY: obj.scale.y,
+                prevScaZ: obj.scale.z,
+                prevIsMoving: prevIsMoving
+            };
+            _pGlob.objMovementInfos[objName] = info;
+        }
+
+        return info;
+    }
+
+    function checkMoving(objName, obj, elapsed) {
+
+        var info = _pGlob.objMovementInfos[objName] ||
+            savePreviousCoords(objName, obj, false);
+
+        var delta = velocity * elapsed;
+
+        var isMoving =
+            Math.abs(obj.position.x - info.prevPosX) > delta ||
+            Math.abs(obj.position.y - info.prevPosY) > delta ||
+            Math.abs(obj.position.z - info.prevPosZ) > delta ||
+            Math.abs(obj.rotation.x - info.prevRotX) > delta ||
+            Math.abs(obj.rotation.y - info.prevRotY) > delta ||
+            Math.abs(obj.rotation.z - info.prevRotZ) > delta ||
+            Math.abs(obj.scale.x - info.prevScaX) > delta ||
+            Math.abs(obj.scale.y - info.prevScaY) > delta ||
+            Math.abs(obj.scale.z - info.prevScaZ) > delta;
+
+        if (!info.prevIsMoving && isMoving) {
+            cbStart(objName);
+            savePreviousCoords(objName, obj, true);
+        } else if (info.prevIsMoving && isMoving) {
+            cbMove(objName);
+            savePreviousCoords(objName, obj, true);
+        } else if (info.prevIsMoving && !isMoving) {
+            cbStop(objName);
+            savePreviousCoords(objName, obj, false);
+        } else {
+            savePreviousCoords(objName, obj, false);
+        }
+    }
+
+    function addToRender(objSelector) {
+
+        function renderCb(elapsed, timeline) {
+
+            var objNames = PzLib.retrieveObjectNames(objSelector);
+
+            for (var i = 0; i < objNames.length; i++) {
+                var objName = objNames[i];
+
+                var obj = PzLib.getObjectByName(objName);
+                if (!obj)
+                    return;
+
+                checkMoving(objName, obj, elapsed);
+            }
+        }
+
+        appInstance.renderCallbacks.push(renderCb);
+        if (PL.editorRenderCallbacks)
+            PL.editorRenderCallbacks.push([appInstance, renderCb]);
+
+    }
+
+    addToRender(objSelector);
+
+}
+
+// setTimeout puzzle
+function registerSetTimeout(timeout, callback) {
+    window.setTimeout(callback, 1000 * timeout);
+}
+
+// disableRendering puzzle
+function disableRendering(enableSSAA) {
+    appInstance.ssaaOnPause = enableSSAA;
+    appInstance.disableRendering(1);
+}
+
+// enableRendering puzzle
+function enableRendering() {
+    appInstance.enableRendering();
+}
+
+// everyFrame puzzle
+function registerEveryFrame(callback) {
+    if (typeof callback == 'function') {
+        appInstance.renderCallbacks.push(callback);
+        if (PL.editorRenderCallbacks)
+            PL.editorRenderCallbacks.push([appInstance, callback]);
+    }
+}
+
+// autoRotateCamera puzzle
+function autoRotateCamera(enabled, speed) {
+
+    if (appInstance.controls && appInstance.controls instanceof v3d.OrbitControls) {
+        appInstance.controls.autoRotate = enabled;
+        appInstance.controls.autoRotateSpeed = speed;
+    } else {
+        console.error('autorotate camera: Wrong controls type');
+    }
+}
+
+// setTimer puzzle
+function registerSetTimer(id, timeout, callback, repeat) {
+
+    if (id in _pGlob.intervalTimers) {
+        window.clearInterval(_pGlob.intervalTimers[id]);
+    }
+
+    _pGlob.intervalTimers[id] = window.setInterval(function() {
+        if (repeat-- > 0) {
+            callback(_pGlob.intervalTimers[id]);
+        }
+    }, 1000 * timeout);
+}
+
+// whenClicked puzzle
+function registerOnClick(objSelector, xRay, doubleClick, mouseButtons, cbDo, cbIfMissedDo) {
+
+    // for AR/VR
+    _pGlob.objClickInfo = _pGlob.objClickInfo || [];
+
+    _pGlob.objClickInfo.push({
+        objSelector: objSelector,
+        callbacks: [cbDo, cbIfMissedDo]
+    });
+
+    PzLib.initObjectPicking(function(intersects, event) {
+
+        var isPicked = false;
+
+        var maxIntersects = xRay ? intersects.length : Math.min(1, intersects.length);
+
+        for (var i = 0; i < maxIntersects; i++) {
+            var obj = intersects[i].object;
+            var objName = PzLib.getObjectName(obj);
+            var objNames = PzLib.retrieveObjectNames(objSelector);
+
+            if (PzLib.isObjectAmongObjects(objName, objNames)) {
+                // save the object for the pickedObject block
+                _pGlob.pickedObject = objName;
+                isPicked = true;
+                cbDo(event);
+            }
+        }
+
+        if (!isPicked) {
+            _pGlob.pickedObject = '';
+            cbIfMissedDo(event);
+        }
+
+    }, doubleClick ? 'dblclick' : 'mousedown', false, mouseButtons);
+}
+
+// show and hide puzzles
+function changeVis(objSelector, bool) {
+    var objNames = PzLib.retrieveObjectNames(objSelector);
+
+    for (var i = 0; i < objNames.length; i++) {
+        var objName = objNames[i]
+        if (!objName)
+            continue;
+        var obj = PzLib.getObjectByName(objName);
+        if (!obj)
+            continue;
+        obj.visible = bool;
+        obj.resolveMultiMaterial().forEach(function(objR) {
+            objR.visible = bool;
+        });
+    }
+}
+
+// whenHovered puzzle
+PzLib.initObjectPicking(function(intersects, event) {
+
+    var prevHovered = _pGlob.hoveredObject;
+    var currHovered = '';
+
+    // the event might happen before hover registration
+    _pGlob.objHoverInfo = _pGlob.objHoverInfo || [];
+
+    // search for closest hovered object
+
+    var lastIntersectIndex = Infinity;
+    _pGlob.objHoverInfo.forEach(function(el) {
+        var maxIntersects = el.xRay ? intersects.length : Math.min(1, intersects.length);
+
+        for (var i = 0; i < maxIntersects; i++) {
+            var obj = intersects[i].object;
+            var objName = PzLib.getObjectName(obj);
+
+            if (PzLib.isObjectAmongObjects(objName, PzLib.retrieveObjectNames(el.objSelector)) && i <= lastIntersectIndex) {
+                currHovered = objName;
+                lastIntersectIndex = i;
+            }
+        }
+    });
+
+    if (prevHovered == currHovered) return;
+
+    // first - all "out" callbacks, then - all "over"
+    _pGlob.objHoverInfo.forEach(function(el) {
+        if (PzLib.isObjectAmongObjects(prevHovered, PzLib.retrieveObjectNames(el.objSelector))) {
+            // ensure the correct value of the hoveredObject block
+            _pGlob.hoveredObject = prevHovered;
+            el.callbacks[1](event);
+        }
+    });
+
+    _pGlob.objHoverInfo.forEach(function(el) {
+        if (PzLib.isObjectAmongObjects(currHovered, PzLib.retrieveObjectNames(el.objSelector))) {
+            // ensure the correct value of the hoveredObject block
+            _pGlob.hoveredObject = currHovered;
+            el.callbacks[0](event);
+        }
+    });
+
+    _pGlob.hoveredObject = currHovered;
+}, 'mousemove');
+
+// whenHovered puzzle
+function registerOnHover(objSelector, xRay, cbOver, cbOut) {
+
+    _pGlob.objHoverInfo = _pGlob.objHoverInfo || [];
+
+    _pGlob.objHoverInfo.push({
+        objSelector: objSelector,
+        callbacks: [cbOver, cbOut],
+        xRay: xRay
+    });
+}
+
+// Describe this function...
+function map_range(input_range_start, input_range_end, result_range_start, result_range_end, input_value) {
+  result_range = (input_range_end - input_range_start) / (result_range_end - result_range_start);
+  output_value = (input_value - input_range_start) / result_range + result_range_start;
+  return output_value;
+}
+
+// getHTMLElemAttribute puzzle
+function getHTMLElemAttribute(attr, id, isParent) {
+    var elem = PzLib.getElement(id, isParent);
+    return elem ? elem[attr]: '';
+}
+
+// getAnimations puzzle
+function getAnimations(objSelector) {
+    const objNames = PzLib.retrieveObjectNames(objSelector);
+
+    const animations = [];
+    for (let i = 0; i < objNames.length; i++) {
+        const objName = objNames[i];
+        if (!objName)
+            continue;
+        // use objName as animName - for now we have one-to-one match
+        const action = v3d.SceneUtils.getAnimationActionByName(appInstance, objName);
+        if (action)
+            animations.push(objName);
+    }
+    return animations;
+}
+
+_pGlob.animMixerCallbacks = [];
+
+var initAnimationMixer = function() {
+
+    function onMixerFinished(e) {
+        var cb = _pGlob.animMixerCallbacks;
+        var found = [];
+        for (var i = 0; i < cb.length; i++) {
+            if (cb[i][0] == e.action) {
+                cb[i][0] = null; // desactivate
+                found.push(cb[i][1]);
+            }
+        }
+        for (var i = 0; i < found.length; i++) {
+            found[i]();
+        }
+    }
+
+    return function initAnimationMixer() {
+        if (appInstance.mixer && !appInstance.mixer.hasEventListener('finished', onMixerFinished)) {
+            PzLib.bindListener(appInstance.mixer, 'finished', onMixerFinished);
+        }
+    };
+
+}();
+
+// animation puzzles
+function operateAnimation(operation, animations, from, to, loop, speed, callback, rev) {
+    if (!animations)
+        return;
+    // input can be either single obj or array of objects
+    if (typeof animations == "string")
+        animations = [animations];
+
+    function processAnimation(animName) {
+        var action = v3d.SceneUtils.getAnimationActionByName(appInstance, animName);
+        if (!action)
+            return;
+        switch (operation) {
+        case 'PLAY':
+            if (!action.isRunning()) {
+                action.reset();
+                if (loop && (loop != "AUTO"))
+                    action.loop = v3d[loop];
+                var scene = PzLib.getSceneByAction(action);
+                var frameRate = PzLib.getSceneAnimFrameRate(scene);
+
+                action.repetitions = Infinity;
+
+                var timeScale = Math.abs(parseFloat(speed));
+                if (rev)
+                    timeScale *= -1;
+
+                action.timeScale = timeScale;
+                action.timeStart = from !== null ? from/frameRate : 0;
+                if (to !== null) {
+                    action.getClip().duration = to/frameRate;
+                } else {
+                    action.getClip().resetDuration();
+                }
+                action.time = timeScale >= 0 ? action.timeStart : action.getClip().duration;
+
+                action.paused = false;
+                action.play();
+
+                // push unique callbacks only
+                var callbacks = _pGlob.animMixerCallbacks;
+                var found = false;
+
+                for (var j = 0; j < callbacks.length; j++)
+                    if (callbacks[j][0] == action && callbacks[j][1] == callback)
+                        found = true;
+
+                if (!found)
+                    _pGlob.animMixerCallbacks.push([action, callback]);
+            }
+            break;
+        case 'STOP':
+            action.stop();
+
+            // remove callbacks
+            var callbacks = _pGlob.animMixerCallbacks;
+            for (var j = 0; j < callbacks.length; j++)
+                if (callbacks[j][0] == action) {
+                    callbacks.splice(j, 1);
+                    j--
+                }
+
+            break;
+        case 'PAUSE':
+            action.paused = true;
+            break;
+        case 'RESUME':
+            action.paused = false;
+            break;
+        case 'SET_FRAME':
+            var scene = PzLib.getSceneByAction(action);
+            var frameRate = PzLib.getSceneAnimFrameRate(scene);
+            action.time = from ? from/frameRate : 0;
+            action.play();
+            action.paused = true;
+            break;
+        case 'SET_SPEED':
+            var timeScale = parseFloat(speed);
+            action.timeScale = rev ? -timeScale : timeScale;
+            break;
+        }
+    }
+
+    for (var i = 0; i < animations.length; i++) {
+        var animName = animations[i];
+        if (animName)
+            processAnimation(animName);
+    }
+
+    initAnimationMixer();
+}
+
+// setMaterialColor puzzle
+function setMaterialColor(matName, colName, r, g, b, cssCode) {
+
+    var colors = PzLib.getMaterialEditableColors(matName);
+
+    if (colors.indexOf(colName) < 0)
+        return;
+
+    if (cssCode) {
+        var color = new v3d.Color(cssCode);
+        r = color.r;
+        g = color.g;
+        b = color.b;
+    }
+
+    var mats = v3d.SceneUtils.getMaterialsByName(appInstance, matName);
+
+    for (var i = 0; i < mats.length; i++) {
+        var mat = mats[i];
+
+        if (mat.isMeshNodeMaterial) {
+            var rgbIdx = mat.nodeRGBMap[colName];
+            mat.nodeRGB[rgbIdx].x = r;
+            mat.nodeRGB[rgbIdx].y = g;
+            mat.nodeRGB[rgbIdx].z = b;
+        } else {
+            mat[colName].r = r;
+            mat[colName].g = g;
+            mat[colName].b = b;
+        }
+        mat.needsUpdate = true;
+
+        if (appInstance.scene !== null) {
+            if (mat === appInstance.scene.worldMaterial) {
+                appInstance.updateEnvironment(mat);
+            }
+        }
+    }
+}
+
+// removeTimer puzzle
+function registerRemoveTimer(id) {
+    if (id in _pGlob.intervalTimers) {
+        window.clearInterval(_pGlob.intervalTimers[id]);
+    }
+}
+
+// eventHTMLElem puzzle
+function eventHTMLElem(eventType, ids, isParent, callback) {
+    var elems = PzLib.getElements(ids, isParent);
+    for (var i = 0; i < elems.length; i++) {
+        var elem = elems[i];
+        if (!elem)
+            continue;
+
+        PzLib.bindListener(elem, eventType, callback);
+    }
+}
+
+
+setHTMLElemStyle('display', 'block', ['left_panel', 'right_panel'], true);
+
+bloom(3.5, 0.4, 0);
+
+whenMoved(getActiveCamera(), 0.001, function() {
+  camera_moving = true;
+}, function() {}, function() {
+  camera_moving = false;
+});
+
+registerSetTimeout(0.1, function() {
+  camera_moving = true;
+});
+
+registerEveryFrame(function() {
+  if (camera_moving == false && animation_happens == false && material_changing == false) {
+    disableRendering(true);
+  } else {
+    enableRendering();
+  }
+});
+
+registerSetTimer('autorotate', 5, function() {
+  autoRotateCamera(true, 2);
+}, Infinity);
+
+registerOnClick(['ALL_OBJECTS'], false, false, [0,1,2], function() {
+  autoRotateCamera(false, 10);
+  registerSetTimer('autorotate', 5, function() {
+    autoRotateCamera(true, 2);
+  }, Infinity);
+}, function() {});
+
+registerOnClick('obj_prodFront', false, false, [0,1,2], function() {
+
+  Function('app', 'v3d', 'puzzles', 'VARS', 'PROC', (('console.log("Click su bottone!")' + '\n' +
+  '' + '\n' +
+  '// Bottone di scelta della modalità di pagamento' + '\n' +
+  'window.parent.postMessage({ action: "openPaymentModal" }, "*");' + '\n' +
+  '' + '\n' +
+  'window.parent.postMessage({' + '\n' +
+  '    action: "openPaymentModal",' + '\n' +
+  '    filename: "ebook.epub",' + '\n' +
+  '    filetype: "eBook in formato .epub"' + '\n' +
+  '}, "*");')))(appInstance, v3d, PL, VARS, PROC);
+
+}, function() {});
+
+changeVis('obj_Info', false);
+registerOnHover('obj_prodFront', false, function() {
+  changeVis('obj_Info', true);
+  setHTMLElemStyle('cursor', 'pointer', ['BODY'], false);
+}, function() {
+  changeVis('obj_Info', false);
+  setHTMLElemStyle('cursor', 'default', ['BODY'], false);
+});
+
+setHTMLElemStyle('minHeight', '4350px', ['BODY'], false);
+setHTMLElemStyle('display', 'block', 'txt_container', false);
+
+eventHTMLElem('scroll', ['WINDOW'], false, function(event) {
+  page_scrolling = true;
+  scroll_amount = getHTMLElemAttribute('scrollY', ['WINDOW'], false);
+  if (scroll_amount <= 1000) {
+
+    operateAnimation('SET_FRAME', getAnimations(['GROUP', 'animated_parts']), map_range(0, 1000, 0, 50, scroll_amount), null, 'AUTO', 1,
+            function() {}, false);
+
+        } else if (scroll_amount > 1000 && scroll_amount <= 2000) {
+
+    operateAnimation('SET_FRAME', getAnimations(['GROUP', 'animated_parts']), Math.abs(map_range(1000, 2000, 0, 50, scroll_amount) - 50), null, 'AUTO', 1,
+            function() {}, false);
+
+        }
+  if (scroll_amount > 1500 && scroll_amount <= 3000) {
+
+    operateAnimation('SET_FRAME', 'Camera_static', map_range(1500, 3000, 0, 100, scroll_amount), null, 'AUTO', 1,
+            function() {}, false);
+
+        }
+  if (scroll_amount > 2000 && scroll_amount <= 2415) {
+    setMaterialColor('cover_custom', 'first_color', map_range(2000, 2415, 0, 0.100481, scroll_amount), map_range(2000, 2415, 0.033105, 0, scroll_amount), map_range(2000, 2415, 0.174647, 0.046665, scroll_amount), '');
+    setMaterialColor('cover_custom', 'second_color', map_range(2000, 2415, 0.048172, 0.491905, scroll_amount), map_range(2000, 2415, 0.14996, 0.043454, scroll_amount), map_range(2000, 2415, 0.391572, 0.105052, scroll_amount), '');
+  } else if (scroll_amount > 2830 && scroll_amount <= 3250) {
+    setMaterialColor('cover_custom', 'first_color', map_range(2830, 3250, 0.100481, 0.036379, scroll_amount), map_range(2830, 3250, 0, 0.100445, scroll_amount), map_range(2830, 3250, 0.046665, 0, scroll_amount), '');
+    setMaterialColor('cover_custom', 'second_color', map_range(2830, 3250, 0.491905, 0.289759, scroll_amount), map_range(2830, 3250, 0.043454, 0.491905, scroll_amount), map_range(2830, 3250, 0.105052, 0.076963, scroll_amount), '');
+  }
+  registerRemoveTimer('myTimer');
+  registerSetTimer('myTimer', 0.1, function() {
+    page_scrolling = false;
+  }, 1);
+});
+
+
+
+} // end of PL.init function
+
+PL.disposeListeners = function() {
+    if (_pGlob) {
+        _pGlob.eventListeners.forEach(({ target, type, listener, optionsOrUseCapture }) => {
+            target.removeEventListener(type, listener, optionsOrUseCapture);
+        });
+        _pGlob.eventListeners.length = 0;
+    }
+}
+
+PL.disposeHTMLElements = function() {
+    if (_pGlob) {
+        _pGlob.htmlElements.forEach(elem => {
+            elem.remove();
+        });
+        _pGlob.htmlElements.clear();
+    }
+}
+
+PL.disposeMaterialsCache = function() {
+    if (_pGlob) {
+        for (const mat of _pGlob.materialsCache.values()) {
+            mat.dispose();
+        }
+        _pGlob.materialsCache.clear();
+    }
+}
+
+PL.dispose = function() {
+    PL.disposeListeners();
+    PL.disposeHTMLElements();
+    PL.disposeMaterialsCache();
+    _pGlob = null;
+    // backward compatibility
+    if (v3d[Symbol.toStringTag] !== 'Module') {
+        delete v3d.PL;
+        delete v3d.puzzles;
+    }
+}
+
+
+
+return PL;
+
+}
+
+export { createPL };

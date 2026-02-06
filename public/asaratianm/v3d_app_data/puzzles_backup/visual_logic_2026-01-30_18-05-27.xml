@@ -1,0 +1,74 @@
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <tab name="Init" type="InitTab" active="false" scrollx="20" scrolly="20" scale="0.9"></tab>
+  <tab name="New Tab" type="CommonTab" active="true" scrollx="-6.601400756836256" scrolly="-13.010937500000068" scale="0.9">
+    <block xmlns="https://developers.google.com/blockly/xml" type="hide" id="A%L./tP{gi2O6q)mUZR?" x="-10" y="308">
+      <value name="VALUE">
+        <shadow type="objectList" id="v*byQ}gPt9ADVEia}:8I">
+          <field name="FIELDNAME">obj_popup</field>
+        </shadow>
+      </value>
+      <next>
+        <block type="whenHovered" id="d4jdf3h;UA^wa0k3i^*_" inline="false">
+          <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false"></mutation>
+          <field name="X_RAY">FALSE</field>
+          <value name="VALUE">
+            <shadow type="objectList" id="bDC|:%[0Dgzb7w3idMw`">
+              <field name="FIELDNAME">obj_prodFront</field>
+            </shadow>
+          </value>
+          <statement name="DO_OVER">
+            <block type="show" id="VgFUT6{Kilo,._gc_aF|">
+              <value name="VALUE">
+                <shadow type="objectList" id="!jYZszJ.*i-PH8Ny?p;g">
+                  <field name="FIELDNAME">obj_popup</field>
+                </shadow>
+              </value>
+              <next>
+                <block type="setHTMLElemStyle" id=".p#0Aa9vb^u}XAeDUCc?">
+                  <field name="PROPERTY">cursor</field>
+                  <field name="PARENT">TRUE</field>
+                  <value name="VALUE">
+                    <shadow type="cursorDropdown" id="U.FtT{t?dKLvg|Rh(fw!">
+                      <field name="TEXT">pointer</field>
+                    </shadow>
+                  </value>
+                  <value name="ID">
+                    <shadow type="text" id="d$Cj.!ofcnfrK}{Cf(^I">
+                      <field name="TEXT">myElem</field>
+                    </shadow>
+                  </value>
+                </block>
+              </next>
+            </block>
+          </statement>
+          <statement name="DO_OUT">
+            <block type="hide" id="SDz*X$@%p9VQ~tJ3Hu5K">
+              <value name="VALUE">
+                <shadow type="objectList" id="]6WbVCMqY:.~5M=UjLdF">
+                  <field name="FIELDNAME">obj_popup</field>
+                </shadow>
+              </value>
+              <next>
+                <block type="setHTMLElemStyle" id="AT]vUKQJM~);U]tSI:#L">
+                  <field name="PROPERTY">cursor</field>
+                  <field name="PARENT">TRUE</field>
+                  <value name="VALUE">
+                    <shadow type="cursorDropdown" id="rWrdC.QPMjz1(t|PHv*a">
+                      <field name="TEXT">pointer</field>
+                    </shadow>
+                  </value>
+                  <value name="ID">
+                    <shadow type="text" id="5*U:$9k%X,XY~%%M~W@/">
+                      <field name="TEXT">myElem</field>
+                    </shadow>
+                  </value>
+                </block>
+              </next>
+            </block>
+          </statement>
+        </block>
+      </next>
+    </block>
+  </tab>
+  <editorsettings viewport-x="946.1999999999999" viewport-y="37" viewport-w="642.8" viewport-h="471" viewport-hidden="false" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
+</xml>

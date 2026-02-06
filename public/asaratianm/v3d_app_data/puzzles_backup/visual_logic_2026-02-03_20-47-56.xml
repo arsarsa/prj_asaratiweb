@@ -25,7 +25,7 @@
       </value>
     </block>
   </tab>
-  <tab name="main" type="CommonTab" active="true" scrollx="-185.53250543179263" scrolly="503.22226671785074" scale="0.7946250301766259">
+  <tab name="main" type="CommonTab" active="true" scrollx="-126.53250543179263" scrolly="370.22226671785074" scale="0.7946250301766259">
     <variables xmlns="https://developers.google.com/blockly/xml">
       <variable id="[5L:IZg/GUqZ4n3S/,4[">camera_moving</variable>
       <variable id=".gx{4,l];xMw.|-e`|.,">material_changing</variable>
@@ -116,76 +116,6 @@
               <field name="BOOL">TRUE</field>
             </block>
           </value>
-        </block>
-      </statement>
-    </block>
-    <block xmlns="https://developers.google.com/blockly/xml" type="everyFrame" id="WQVMg/=59oC)2selE+#L" x="881" y="-141">
-      <statement name="DO">
-        <block type="controls_if" id="-=wD;sBEN.;|b%4kA*#d">
-          <mutation else="1"></mutation>
-          <value name="IF0">
-            <block type="logic_operation" id="Imo5Mc5BL0DJTQM_MN`R">
-              <field name="OP">AND</field>
-              <value name="A">
-                <block type="logic_operation" id="AaAM0Htom1+?w@|X|~F@">
-                  <field name="OP">AND</field>
-                  <value name="A">
-                    <block type="logic_compare" id="gE3`BjB9n{_*u/B8Yb(F">
-                      <field name="OP">EQ</field>
-                      <value name="A">
-                        <block type="variables_get" id="NI0$1c{KQz;Uf8`%,xL|">
-                          <field name="VAR" id="[5L:IZg/GUqZ4n3S/,4[">camera_moving</field>
-                        </block>
-                      </value>
-                      <value name="B">
-                        <block type="logic_boolean" id="HT[+6H.rruu^_J,/69(q">
-                          <field name="BOOL">FALSE</field>
-                        </block>
-                      </value>
-                    </block>
-                  </value>
-                  <value name="B">
-                    <block type="logic_compare" id="c3eR`e=-z=Xpn5:^^E-o">
-                      <field name="OP">EQ</field>
-                      <value name="A">
-                        <block type="variables_get" id="KK7,ULwfoObJGwS=t0@(">
-                          <field name="VAR" id="HKHLe{YG$SSKEU?m(_j?">animation_happens</field>
-                        </block>
-                      </value>
-                      <value name="B">
-                        <block type="logic_boolean" id="shB:e{OX5$rH9nV=MW6E">
-                          <field name="BOOL">FALSE</field>
-                        </block>
-                      </value>
-                    </block>
-                  </value>
-                </block>
-              </value>
-              <value name="B">
-                <block type="logic_compare" id="$MUE+T-iKwNhj2UWw0W5">
-                  <field name="OP">EQ</field>
-                  <value name="A">
-                    <block type="variables_get" id="{7bnY#b`By}}@g|LwUJZ">
-                      <field name="VAR" id=".gx{4,l];xMw.|-e`|.,">material_changing</field>
-                    </block>
-                  </value>
-                  <value name="B">
-                    <block type="logic_boolean" id="pp}Rn3X5n8-[LlakY|Vu">
-                      <field name="BOOL">FALSE</field>
-                    </block>
-                  </value>
-                </block>
-              </value>
-            </block>
-          </value>
-          <statement name="DO0">
-            <block type="disableRendering" id="$24?O})x|hm;FM5F,K0A">
-              <field name="AA">TRUE</field>
-            </block>
-          </statement>
-          <statement name="ELSE">
-            <block type="enableRendering" id="bChk+#Ut=e;tkG+[@3BX"></block>
-          </statement>
         </block>
       </statement>
     </block>
@@ -298,26 +228,73 @@
         </block>
       </statement>
     </block>
-    <block xmlns="https://developers.google.com/blockly/xml" type="whenClicked" id="+lY|Q]Xr[=PmPHh/.b33" inline="false" x="822" y="89">
-      <mutation xmlns="http://www.w3.org/1999/xhtml" adveventoptions="false" enableifmissed="false"></mutation>
-      <field name="X_RAY">FALSE</field>
-      <field name="DOUBLE_CLICK">FALSE</field>
-      <field name="LEFT_BUTTON">TRUE</field>
-      <field name="MIDDLE_BUTTON">TRUE</field>
-      <field name="RIGHT_BUTTON">TRUE</field>
-      <value name="VALUE">
-        <shadow type="objectList" id="$dg[{@L5j4Jlx|aJ[NK+">
-          <field name="FIELDNAME">obj_prodFront</field>
-        </shadow>
-      </value>
+    <block xmlns="https://developers.google.com/blockly/xml" type="everyFrame" id="WQVMg/=59oC)2selE+#L" x="858" y="166">
       <statement name="DO">
-        <block type="execScript" id="g_sGHFZVHSHi;6|Hihhf">
-          <value name="TEXT">
-            <shadow type="textMultiline" id="Lkd=uxCq@MoKJBK4=deS">
-              <field name="HIGHLIGHT_MODE">javascript</field>
-              <field name="TEXT" editor-height="11" editor-width="717.7177715292711">console.log("Click su bottone!")&amp;#10;&amp;#10;// Bottone di scelta della modalità di pagamento&amp;#10;window.parent.postMessage({ action: "openPaymentModal" }, "*");&amp;#10;&amp;#10;window.parent.postMessage({&amp;#10;    action: "openPaymentModal",&amp;#10;    filename: "ebook.epub",&amp;#10;    filetype: "eBook in formato .epub"&amp;#10;}, "*");</field>
-            </shadow>
+        <block type="controls_if" id="-=wD;sBEN.;|b%4kA*#d">
+          <mutation else="1"></mutation>
+          <value name="IF0">
+            <block type="logic_operation" id="Imo5Mc5BL0DJTQM_MN`R">
+              <field name="OP">AND</field>
+              <value name="A">
+                <block type="logic_operation" id="AaAM0Htom1+?w@|X|~F@">
+                  <field name="OP">AND</field>
+                  <value name="A">
+                    <block type="logic_compare" id="gE3`BjB9n{_*u/B8Yb(F">
+                      <field name="OP">EQ</field>
+                      <value name="A">
+                        <block type="variables_get" id="NI0$1c{KQz;Uf8`%,xL|">
+                          <field name="VAR" id="[5L:IZg/GUqZ4n3S/,4[">camera_moving</field>
+                        </block>
+                      </value>
+                      <value name="B">
+                        <block type="logic_boolean" id="HT[+6H.rruu^_J,/69(q">
+                          <field name="BOOL">FALSE</field>
+                        </block>
+                      </value>
+                    </block>
+                  </value>
+                  <value name="B">
+                    <block type="logic_compare" id="c3eR`e=-z=Xpn5:^^E-o">
+                      <field name="OP">EQ</field>
+                      <value name="A">
+                        <block type="variables_get" id="KK7,ULwfoObJGwS=t0@(">
+                          <field name="VAR" id="HKHLe{YG$SSKEU?m(_j?">animation_happens</field>
+                        </block>
+                      </value>
+                      <value name="B">
+                        <block type="logic_boolean" id="shB:e{OX5$rH9nV=MW6E">
+                          <field name="BOOL">FALSE</field>
+                        </block>
+                      </value>
+                    </block>
+                  </value>
+                </block>
+              </value>
+              <value name="B">
+                <block type="logic_compare" id="$MUE+T-iKwNhj2UWw0W5">
+                  <field name="OP">EQ</field>
+                  <value name="A">
+                    <block type="variables_get" id="{7bnY#b`By}}@g|LwUJZ">
+                      <field name="VAR" id=".gx{4,l];xMw.|-e`|.,">material_changing</field>
+                    </block>
+                  </value>
+                  <value name="B">
+                    <block type="logic_boolean" id="pp}Rn3X5n8-[LlakY|Vu">
+                      <field name="BOOL">FALSE</field>
+                    </block>
+                  </value>
+                </block>
+              </value>
+            </block>
           </value>
+          <statement name="DO0">
+            <block type="disableRendering" id="$24?O})x|hm;FM5F,K0A">
+              <field name="AA">TRUE</field>
+            </block>
+          </statement>
+          <statement name="ELSE">
+            <block type="enableRendering" id="bChk+#Ut=e;tkG+[@3BX"></block>
+          </statement>
         </block>
       </statement>
     </block>
@@ -1497,5 +1474,5 @@
       </statement>
     </block>
   </tab>
-  <editorsettings viewport-x="946.1999999999999" viewport-y="37" viewport-w="642.8" viewport-h="471" viewport-hidden="true" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
+  <editorsettings viewport-x="946.1999999999999" viewport-y="37" viewport-w="642.8" viewport-h="471" viewport-hidden="false" toolbox-library-mode="false" toolbox-minimized-mode="false"></editorsettings>
 </xml>
