@@ -1,0 +1,57 @@
+{
+    "files": {
+        "ammo.wasm.js": {
+            "hash": "935f075d96b1cf646035bb9dcff9c8f307358688", 
+            "type": "BINARY"
+        }, 
+        "ammo.wasm.wasm": {
+            "hash": "fc769060e93eb255c07d0cdaba37f7c4e36b6733", 
+            "type": "BINARY"
+        }, 
+        "asarati.bin": {
+            "hash": "3abca05838cbc356381b3b5e32359342e3d6c03e", 
+            "type": "BINARY"
+        }, 
+        "asarati.blend": {
+            "hash": "201edb1638297a6a51f45b35a054c4642fc0e3db", 
+            "type": "BINARY"
+        }, 
+        "asarati.css": {
+            "hash": "72939fdff9fc95765f3f1cea8c0b38a18cb7028d", 
+            "type": "BINARY"
+        }, 
+        "asarati.gltf": {
+            "hash": "2f7cc8a85c543b462d96f1b61a9cc667b9cef4f0", 
+            "type": "BINARY"
+        }, 
+        "asarati.html": {
+            "hash": "e5f01cdaf51aa16de2e03c7350dfcfdcf1bb81fc", 
+            "type": "BINARY"
+        }, 
+        "asarati.js": {
+            "hash": "7a90434f8ccdf5a876085ee04f29a3144abcd3f3", 
+            "type": "BINARY"
+        }, 
+        "basis_transcoder.js": {
+            "hash": "1ea211086a1a498f7ea65d98970ad6f70b3f8d04", 
+            "type": "BINARY"
+        }, 
+        "basis_transcoder.wasm": {
+            "hash": "7338e09b9e45089ca077e12eaf866a4a9e37753a", 
+            "type": "BINARY"
+        }, 
+        "environment.hdr": {
+            "hash": "664840d92e1b7a6c69f4272be968bc8132a7bf26", 
+            "type": "BINARY"
+        }, 
+        "opentype.js": {
+            "hash": "c1479688d14f603118301a5edb59aa2ef3ec9e2d", 
+            "type": "BINARY"
+        }, 
+        "v3d.js": {
+            "hash": "e167f215b33fa7e46768eef1e688cf8def2e62bf", 
+            "type": "BINARY"
+        }
+    }, 
+    "name": "Code-Based"
+}
