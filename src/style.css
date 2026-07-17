@@ -1,0 +1,345 @@
+/* src/style.css */
+
+* {
+  box-sizing: border-box;
+}
+
+/* BASE */
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #000;
+}
+
+/* VERGE3D */
+#v3d-container,
+#v3d-container canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 1 !important;
+}
+
+/* =========================
+   MODALE PRODOTTI
+========================= */
+
+.product-modal-box {
+  position: fixed !important;
+  inset: 0 !important;
+
+  display: none !important;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0,0,0,.7);
+
+  z-index: 2147483647 !important;
+}
+
+.product-modal-box.show {
+  display: flex !important;
+}
+
+.modal-card {
+  position: relative;
+  z-index: 2147483647 !important;
+
+  width: 90vw;
+  max-width: 420px;
+  max-height: 80vh;
+
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 20px 24px 0 24px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+/* close button */
+.close-btn {
+  width: 32px;
+  height: 32px;
+
+  border: none;
+  background: transparent;
+
+  cursor: pointer;
+  font-size: 22px;
+  color: #555;
+}
+
+.close-btn:hover {
+  color: #000;
+}
+
+/* body */
+.modal-body {
+  padding: 20px 24px 24px 24px;
+}
+
+/* stats */
+.stats {
+  margin-bottom: 20px;
+  padding: 10px;
+
+  text-align: center;
+  font-size: 15px;
+  color: #555;
+
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+/* buttons */
+.product-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-btn {
+  width: 100%;
+  padding: 16px 20px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  border: none;
+  border-radius: 10px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.product-btn:not([disabled]) {
+  background: #635bff;
+  color: white;
+}
+
+.product-btn:not([disabled]):hover {
+  background: #554de0;
+}
+
+.product-btn[disabled] {
+  background: #e5e5e5;
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* =========================
+   MODALE PAGAMENTO
+========================= */
+
+#payment-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 21000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.7);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition: opacity 0.2s ease;
+}
+
+#payment-modal.modal-show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+#payment-modal .modal-content {
+  width: 90%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+}
+
+/* solo email input */
+#payment-modal input[type="email"] {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+/* payment methods */
+.payment-methods-row,
+.btn-metodo-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.btn-metodo {
+  width: 100%;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    opacity .18s ease;
+}
+
+.btn-metodo:hover {
+  background: #f5f5f5;
+}
+
+.btn-metodo:disabled {
+  background: #e5e5e5;
+  color: #888;
+  cursor: not-allowed;
+  opacity: .8;
+}
+
+.btn-metodo.attivo {
+  background: #635bff;
+  border-color: #635bff;
+  color: white;
+}
+
+#payment-element {
+    min-height: 260px;
+}
+
+#payment-title {
+    min-height: 58px;
+}
+
+#pay-btn,
+#close-pay {
+  width: 100%;
+  padding: 14px;
+
+  margin-top: 10px;
+
+  border: none;
+  border-radius: 8px;
+
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#pay-btn {
+  background: #635bff;
+  color: white;
+}
+
+#pay-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#close-pay {
+  background: #777;
+  color: white;
+}
+
+.payment-status-message {
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px 18px;
+    border-radius: 14px;
+    line-height: 1.45;
+}
+
+/* =========================
+   NEWSLETTER CONSENT
+========================= */
+
+.newsletter-consent {
+    margin: 12px 0 16px;
+    padding: 12px 14px;
+
+    background: #f8f9fc;
+    border: 1px solid #e6e8f0;
+    border-radius: 12px;
+}
+
+.newsletter-consent {
+    display: block !important;
+}
+
+.newsletter-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    line-height: 1.45;
+    color: #444;
+}
+
+.newsletter-checkbox input[type="checkbox"] {
+    width: auto;
+    margin: 2px 0 0 0;
+    transform: scale(1.15);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.newsletter-checkbox span {
+    flex: 1;
+}
+
+/* =========================
+   MODAL OPEN STATE
+========================= */
+
+body.modal-open #v3d-container {
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* responsive */
+@media (max-width: 480px) {
+  .modal-card,
+  #payment-modal .modal-content {
+    width: 95vw;
+  }
+}

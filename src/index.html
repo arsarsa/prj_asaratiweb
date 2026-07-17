@@ -1,0 +1,216 @@
+<!-- src/index.html -->
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>asarati</title>
+
+    <!-- Firebase Compat v9 -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <link rel="icon" href="/favicon.ico">
+
+    <!-- Stripe -->
+    <script src="https://js.stripe.com/v3/"></script>
+
+    <!-- Verge3D -->
+    <script src="/asaratianm/v3d.js"></script>
+    <script src="/asaratianm/asaratianm.js"></script>
+</head>
+
+<body>
+    <div id="v3d-container" style="position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:1;"></div>
+
+    <!-- MODALE PRODOTTI -->
+    <div id="products-modal" class="product-modal-box">
+        <div class="modal-card">
+
+            <div class="modal-header">
+                <h2>🛒 Scegli il formato Asarati</h2>
+                <button class="close-btn" id="close-product-btn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div id="total-downloads" class="stats">Download totali: 0</div>
+
+                <div class="product-buttons">
+                    <button class="product-btn ebook-btn" data-product="ebook01">
+                        📖 eBook <span id="ebook-count">0</span>
+                    </button>
+
+                    <button class="product-btn audiobook-btn" data-product="audiobook01">
+                        🎧 AudioBook <span id="audiobook-count">0</span>
+                    </button>
+
+                    <button class="product-btn boxbook-btn" data-product="boxbook01" disabled>
+                        📦 BoxBook <span id="boxbook-count">0</span> (prossimamente)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE PAGAMENTO -->
+    <div id="payment-modal">
+        <div
+            class="modal-content payment-modal-content"
+            style="
+                padding:25px;
+                background:white;
+                border-radius:16px;
+                max-width:420px;
+                width:90%;
+            "
+        >
+
+            <!-- HEADER -->
+            <div class="modal-header">
+                <h2 id="payment-title">
+                    💳 Completa l'acquisto
+                </h2>
+
+                <button
+                    class="close-btn"
+                    id="close-payment-x"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <!-- FORM SECTION -->
+            <div id="payment-form-section">
+
+                <!-- EMAIL -->
+                <input
+                    type="email"
+                    id="emailInput"
+                    placeholder="📧 Inserisci la tua email (obbligatoria)"
+                    style="
+                        width:100%;
+                        padding:15px;
+                        border:2px solid #ddd;
+                        border-radius:10px;
+                        font-size:16px;
+                        margin-bottom:8px;
+                    "
+                >
+
+                <!-- NEWSLETTER -->
+                <div class="newsletterConsent">
+                    <label
+                        class="newsletter-checkbox"
+                    >
+
+                        <input
+                            type="checkbox"
+                            id="newsletterConsent"
+                        >
+                        <span>
+                            Desidero ricevere
+                            aggiornamenti,
+                            novità editoriali
+                            e nuovi contenuti
+                            da asarati.
+                        </span>
+                    </label>
+                </div>
+
+                <!-- ERROR -->
+                <div
+                    id="emailError"
+                    style="
+                        display:none;
+                        color:#dc3545;
+                        font-size:14px;
+                        margin-bottom:10px;
+                    "
+                ></div>
+
+                <!-- PAYMENT METHODS -->
+                <div class="payment-methods-row">
+
+                    <button
+                        id="btn-stripe"
+                        class="btn-metodo attivo"
+                        type="button"
+                    >
+                        Carta | Stripe
+                    </button>
+
+                    <button
+                        id="btn-paypal"
+                        class="btn-metodo"
+                        type="button"
+                    >
+                        PayPal
+                    </button>
+
+                    <button
+                        id="btn-satispay"
+                        class="btn-metodo"
+                        type="button"
+                    >
+                        Satispay
+                    </button>
+
+                    <button
+                        id="btn-crypto"
+                        class="btn-metodo"
+                        type="button"
+                        disabled
+                    >
+                        Crypto
+                    </button>
+
+                </div>
+
+                <!-- STRIPE ELEMENT -->
+                <div
+                    id="payment-element"
+                    style="
+                        margin-top:10px;
+                        min-height:120px;
+                    "
+                ></div>
+
+                <!-- PAY BUTTON -->
+                <button
+                    id="pay-btn"
+                    style="
+                        width:100%;
+                        padding:18px;
+                        background:#635bff;
+                        color:white;
+                        border:none;
+                        border-radius:12px;
+                        font-size:18px;
+                        font-weight:bold;
+                        cursor:pointer;
+                        margin-top:15px;
+                    "
+                >
+                    Paga ora →
+                </button>
+            </div>
+
+            <!-- STATUS MODE -->
+            <div
+                id="payment-status-message"
+                class="payment-status-message"
+                style="
+                    display:none;
+                    min-height:90px;
+                    padding:12px 0;
+                    font-size:15px;
+                    line-height:1.65;
+                    color:#444;
+                "
+            ></div>
+        </div>
+    </div>
+
+</body>
+</html>
