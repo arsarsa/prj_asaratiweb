@@ -81,6 +81,14 @@ module.exports = {
           {
             from: 'public/favicon.ico',
             to: 'favicon.ico'
+          },
+
+          {
+            from: 'uploadfile',
+            to: 'uploadfile',
+            globOptions: {
+              ignore: ['**/fileloaded/**', '**/.DS_Store']
+            }
           }
         ]
       })

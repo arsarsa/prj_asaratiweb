@@ -9,82 +9,130 @@
   <title>asarati.it | Upload File Backend</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <style>
-    .highlight-online {
-      background-color: darkred;
-      color: white;
-      padding: 0 5px;
-      border-radius: 3px;
-    }
-
-    #ebookList, #audioList, #boxList {
-    display: none;
-    }
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #18212f; background: #f5f7fa; }
+    * { box-sizing: border-box; }
+    body { max-width: 1120px; margin: 0 auto; padding: 28px 20px 60px; }
+    h1 { font-size: clamp(1.55rem, 4vw, 2rem); margin: 0 0 10px; }
+    h2 { font-size: 1.15rem; margin: 0 0 16px; }
+    button, input, textarea { font: inherit; }
+    button { min-height: 42px; padding: 9px 15px; border: 1px solid #cbd3df; border-radius: 9px; background: #fff; color: #18212f; cursor: pointer; }
+    button:hover { background: #f0f4f9; }
+    button:disabled { opacity: .55; cursor: wait; }
+    input[type="text"], input[type="number"], input[type="file"], textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #cbd3df; border-radius: 9px; background: #fff; }
+    input:focus, button:focus-visible { outline: 3px solid #bfd8ff; outline-offset: 2px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+    .upload-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .upload-card, .product-card { background: #fff; border: 1px solid #e1e6ee; border-radius: 14px; padding: 20px; box-shadow: 0 3px 12px rgb(20 36 60 / 4%); }
+    .upload-card { display: grid; gap: 11px; align-content: start; }
+    .upload-card p { margin: 0; color: #586578; font-size: .92rem; }
+    .primary-button { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+    .primary-button:hover { background: #1e40af; }
+    .danger-button { color: #a52222; border-color: #efc3c3; }
+    .highlight-online { background: transparent; color: #1d4ed8; padding: 0; border-radius: 0; }
+    .inventory-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 24px 0 14px; }
+    .inventory-toolbar label { display: flex; align-items: center; gap: 8px; color: #465366; }
+    #ebookList, #audioList, #boxList { display: none; }
+    .product-list { display: grid; gap: 12px; }
+    .product-card h3 { margin: 0 0 8px; font-size: 1.08rem; }
+    .product-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; color: #526074; font-size: .9rem; }
+    .product-meta strong { color: #273448; font-weight: 600; }
+    .product-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .button-link { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 9px 15px; border: 1px solid #cbd3df; border-radius: 9px; color: #1d4ed8; text-decoration: none; }
+    .product-message { margin: 8px 0 0; color: #465366; font-size: .9rem; }
+    .admin-modal { display: none; position: fixed; inset: 0; z-index: 1000; align-items: center; justify-content: center; padding: 16px; background: rgb(15 23 42 / 48%); }
+    .admin-modal.show { display: flex; }
+    .modal-card { width: min(100%, 500px); max-height: 90vh; overflow: auto; padding: 22px; border-radius: 14px; background: #fff; box-shadow: 0 20px 60px rgb(0 0 0 / 20%); }
+    .modal-card h2 { margin-top: 0; }
+    .modal-fields { display: grid; gap: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    #trailerPlayer { display: block; width: 100%; max-height: 65vh; margin: 12px 0; border-radius: 10px; background: #111; }
+    #ebookMessage, #audiobookMessage, #fileZipMessage { color: #465366; }
+    .product-meta div { overflow-wrap: anywhere; }
+    @media (max-width: 760px) { body { padding: 18px 14px 40px; } .upload-grid { grid-template-columns: 1fr; } .page-header { align-items: flex-start; flex-direction: column; } .product-meta { grid-template-columns: 1fr; } .product-actions button { flex: 1 1 140px; } }
 </style>
 </head>
 <body>
-  <h1><b><span class="highlight-online">Online Backend</span></b> | Inserimento File</h1>
-  
-  <button onclick="window.location.href='index_upload.html'">Torna all'Index Upload</button>
-  <hr>
+  <header class="page-header">
+    <div><h1><span class="highlight-online">Online Backend</span></h1><p>Gestisci prodotti, revisioni e QR code.</p></div>
+    <button onclick="window.location.href='index_upload.html'">← Ritorna al pannello</button>
+  </header>
+
+  <div class="upload-grid">
+  <section class="upload-card">
 
   <h2>Carica eBook (.epub | .pdf)</h2>
+  <input type="text" id="ebookName" placeholder="Titolo prodotto">
+  <input type="text" id="ebookDescription" placeholder="Descrizione">
   <input type="file" id="ebookInput" accept=".epub, .pdf">
   <input type="number" id="ebookPrice" placeholder="Prezzo in EUR">
   <button id="uploadEbookButton">Carica eBook</button>
   <p id="ebookMessage"></p>
   <p id="ebookFileId"></p>
+  </section>
 
-  <h2>Carica AudioBook (.mp3)</h2>
+  <section class="upload-card"><h2>Carica AudioBook (.mp3)</h2>
+  <input type="text" id="audiobookName" placeholder="Titolo prodotto">
+  <input type="text" id="audiobookDescription" placeholder="Descrizione">
   <input type="file" id="audiobookInput" accept="audio/*">
   <input type="number" id="audiobookPrice" placeholder="Prezzo in EUR">
   <button id="uploadaudiobookButton">Carica audioBook</button>
   <p id="audiobookMessage"></p>
   <p id="audiobookFileId"></p>
+  </section>
 
-  <h2>Carica boxBook (.zip)</h2>
+  <section class="upload-card"><h2>Carica boxBook (.zip)</h2>
+  <input type="text" id="boxbookName" placeholder="Titolo prodotto">
+  <input type="text" id="boxbookDescription" placeholder="Descrizione">
   <input type="file" id="fileZipInput" accept=".zip">
   <input type="number" id="fileZipPrice" placeholder="Prezzo in EUR">
   <button id="uploadfileZipButton">Carica boxBook</button>
   <p id="fileZipMessage"></p>
   <p id="fileZipFileId"></p>
-  
-  <button id="toggleFilesBtn">🔼 Mostra/Nascondi file</button>
+  </section></div>
 
-  <hr>
+  <div class="inventory-toolbar">
+    <button id="toggleFilesBtn">Mostra prodotti caricati</button>
+    <label><input id="showArchivedCheckbox" type="checkbox"> Mostra anche gli archiviati</label>
+  </div>
 
-<div id="ebookList"></div>
-<div id="audioList"></div>
-<div id="boxList"></div>
+<div id="ebookList" class="product-list"></div>
+<div id="audioList" class="product-list"></div>
+<div id="boxList" class="product-list"></div>
 
-<!-- Modale login -->
-<div id="loginModal" style="display:none; position:fixed; top:30%; left:50%; transform:translateX(-50%); background:#fff; border:1px solid #ccc; padding:20px; z-index:1000;">
-  <p>✅ Login eseguito con successo</p>
-  <button onclick="document.getElementById('loginModal').style.display='none'">OK</button>
+<div id="editProductModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="editProductTitle">
+  <form id="editProductForm" class="modal-card">
+    <h2 id="editProductTitle">Modifica prodotto</h2>
+    <div class="modal-fields">
+      <label for="editProductName">Titolo</label><input id="editProductName" type="text" required maxlength="120">
+      <label for="editProductDescription">Descrizione</label><textarea id="editProductDescription" rows="4" required maxlength="2000"></textarea>
+      <label for="editProductPrice">Prezzo (€)</label><input id="editProductPrice" type="number" min="0.01" step="0.01" required>
+    </div>
+    <p id="editProductMessage" class="product-message" role="status"></p>
+    <div class="modal-actions"><button id="cancelEditProduct" type="button">Annulla</button><button id="saveProductChanges" class="primary-button" type="submit">Salva modifiche</button></div>
+  </form>
 </div>
 
-<!-- Modale aggiornamento prezzo -->
-<div id="priceModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; padding:20px; z-index:1000;">
-  <h3>💰 Aggiorna Prezzo</h3>
-  <input type="text" id="newPriceInput" placeholder="Nuovo prezzo (€)" />
-  <button id="confirmPriceUpdateBtn">✅ Aggiorna</button>
-  <button onclick="document.getElementById('priceModal').style.display='none'">❌ Annulla</button>
+<input id="revisionFileInput" type="file" hidden>
+
+<div id="trailerModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="trailerTitle">
+  <div class="modal-card">
+    <h2 id="trailerTitle">Anteprima trailer</h2>
+    <video id="trailerPlayer" controls playsinline preload="metadata">
+      Il browser non supporta la riproduzione video.
+    </video>
+    <div class="modal-actions"><button id="closeTrailerPreview" type="button">Chiudi</button></div>
+  </div>
 </div>
 
-<!-- Modale download file -->
-<div id="downloadModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; padding:20px; z-index:1000;">
-  <h3>📥 Download File</h3>
-  <button id="confirmDownloadBtn">📥 Download</button>
-  <button onclick="document.getElementById('downloadModal').style.display='none'">❌ Annulla</button>
+<!-- Accesso amministratore richiesto -->
+<div id="loginModal" class="admin-modal" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h2>Accesso richiesto</h2>
+    <p>Accedi con un account amministratore per gestire i prodotti.</p>
+    <a class="button-link" href="/uploadfile/login_upload.html">Vai all'accesso</a>
+  </div>
 </div>
 
-<!-- Modale conferma eliminazione -->
-<div id="deleteModal" style="display:none; position:fixed; top:30%; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; padding:20px; z-index:1000;">
-  <h3>⚠️ Conferma Eliminazione</h3>
-  <p id="deleteMessage"></p>
-  <button id="confirmDeleteBtn">🗑️ Elimina</button>
-  <button onclick="document.getElementById('deleteModal').style.display='none'">❌ Annulla</button>
-</div>
-
-  <script type="module" src="scripts/online_upload.js"></script>
+  <script type="module" src="scripts/online_upload.js?v=20261014-1"></script>
 </body>
 </html>

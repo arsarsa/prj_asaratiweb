@@ -2,7 +2,9 @@
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 const Stripe = require("stripe");
+const QRCode = require("qrcode");
 const { Resend } = require("resend");
 
 const resend =
@@ -10,9 +12,11 @@ const resend =
     functions.config().resend.key
   );
 
-admin.initializeApp();
+admin.initializeApp({
+  storageBucket: "asarati-9aafe.firebasestorage.app"
+});
 const db = admin.firestore();
-const bucket = admin.storage().bucket();
+const bucket = admin.storage().bucket("asarati-9aafe.firebasestorage.app");
 
 const config = functions.config().stripe;
 const isTest = config.mode !== "live";
@@ -23,6 +27,313 @@ const webhookSecret = isTest ? config.test_webhook_secret : config.live_webhook_
 
 const stripe = Stripe(stripeSecret);
 
+// Admin creates a private product draft and receives a one-object signed URL.
+// The client never receives Storage read access to paid files.
+exports.createProductUpload = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+
+  const productId = String(data.productId || "").trim();
+  const name = String(data.name || "").trim();
+  const type = String(data.type || "").trim();
+  const fileName = String(data.fileName || "").trim();
+  const description = String(data.description || "").trim();
+  const price = String(data.price || "").trim().replace(",", ".");
+  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  if (!/^[a-zA-Z0-9_-]{3,80}$/.test(productId) || !name || !categoryByType[type] ||
+      !/^[^/\\]+\.(zip|epub|pdf|mp3)$/i.test(fileName) || !/^\d+(\.\d{1,2})?$/.test(price) ||
+      Number(price) <= 0 || !description) {
+    throw new functions.https.HttpsError("invalid-argument", "Product details are invalid.");
+  }
+
+  const storagePath = `protected_file/${categoryByType[type]}/${productId}`;
+  const objectPath = `${storagePath}/${fileName}`;
+  const productRef = db.collection("products").doc(productId);
+  const existing = await productRef.get();
+  if (existing.exists && (existing.get("active") === true || existing.get("archivedAt"))) {
+    throw new functions.https.HttpsError("already-exists", "Product ID already exists.");
+  }
+  const productData = {
+    productId, name, type, description, price, currency: "eur", active: false,
+    fileName, storageFileName: fileName, storagePath,
+    createdBy: { uid: context.auth.uid, email: context.auth.token.email || null },
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    counters: { downloads: 0, total: 0 }
+  };
+  if (existing.exists) await productRef.set(productData, { merge: true });
+  else await productRef.create(productData);
+  const offerRef = db.collection("offers").doc(`product_${productId}`);
+  await offerRef.set({ productId, name, title: name, slug: productId, campaignId: "qrc", active: false }, { merge: true });
+
+  const [uploadUrl] = await bucket.file(objectPath).getSignedUrl({
+    version: "v4", action: "write", expires: Date.now() + 15 * 60 * 1000,
+    contentType: String(data.contentType || "application/octet-stream")
+  });
+  return { uploadUrl, objectPath, publicUrl: `https://asaratiqrc.web.app/p/${productId}` };
+});
+
+exports.updateProductDetails = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+
+  const productId = String(data.productId || "").trim();
+  const name = String(data.name || "").trim();
+  const description = String(data.description || "").trim();
+  const price = String(data.price || "").trim().replace(",", ".");
+  if (!productId || !name || !description || !/^\d+(\.\d{1,2})?$/.test(price) || Number(price) <= 0) {
+    throw new functions.https.HttpsError("invalid-argument", "Product details are invalid.");
+  }
+
+  const productRef = db.collection("products").doc(productId);
+  const product = await productRef.get();
+  if (!product.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+
+  const editor = { uid: context.auth.uid, email: context.auth.token.email || null };
+  await productRef.update({
+    name, description, price,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedBy: editor
+  });
+  await db.collection("offers").doc(`product_${productId}`).set({
+    name, title: name
+  }, { merge: true });
+  return { success: true };
+});
+
+exports.createProductRevisionUpload = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+
+  const productId = String(data.productId || "").trim();
+  const productRef = db.collection("products").doc(productId);
+  const productSnapshot = await productRef.get();
+  if (!productSnapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const product = productSnapshot.data();
+  if (product.archivedAt || !product.storagePath || !product.storageFileName) {
+    throw new functions.https.HttpsError("failed-precondition", "Restore the product before uploading a revision.");
+  }
+
+  const contentType = String(data.contentType || "application/octet-stream");
+  const objectPath = `${product.storagePath}/${product.storageFileName}`;
+  const [uploadUrl] = await bucket.file(objectPath).getSignedUrl({
+    version: "v4", action: "write", expires: Date.now() + 15 * 60 * 1000, contentType
+  });
+  return { uploadUrl, objectPath };
+});
+
+exports.recordProductRevision = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productId = String(data.productId || "").trim();
+  const productRef = db.collection("products").doc(productId);
+  const product = await productRef.get();
+  if (!product.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const editor = { uid: context.auth.uid, email: context.auth.token.email || null };
+  await productRef.update({
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedBy: editor,
+    revisedAt: admin.firestore.FieldValue.serverTimestamp(),
+    revisedBy: editor
+  });
+  return { success: true };
+});
+
+exports.archiveProduct = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productId = String(data.productId || "").trim();
+  const productRef = db.collection("products").doc(productId);
+  const product = await productRef.get();
+  if (!product.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const editor = { uid: context.auth.uid, email: context.auth.token.email || null };
+  const batch = db.batch();
+  batch.update(productRef, {
+    active: false,
+    archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+    archivedBy: editor,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedBy: editor
+  });
+  batch.set(db.collection("offers").doc(`product_${productId}`), { active: false }, { merge: true });
+  await batch.commit();
+  return { success: true, archived: true };
+});
+
+exports.restoreProduct = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productId = String(data.productId || "").trim();
+  const productRef = db.collection("products").doc(productId);
+  const product = await productRef.get();
+  if (!product.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  if (!product.get("qrCodeGeneratedAt")) {
+    throw new functions.https.HttpsError("failed-precondition", "The product QR code is not ready.");
+  }
+  const editor = { uid: context.auth.uid, email: context.auth.token.email || null };
+  const batch = db.batch();
+  batch.update(productRef, {
+    active: true,
+    archivedAt: admin.firestore.FieldValue.delete(),
+    archivedBy: admin.firestore.FieldValue.delete(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedBy: editor
+  });
+  batch.set(db.collection("offers").doc(`product_${productId}`), { active: true }, { merge: true });
+  await batch.commit();
+  return { success: true, archived: false };
+});
+
+exports.createProductDownloadUrl = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productId = String(data.productId || "").trim();
+  const productSnapshot = await db.collection("products").doc(productId).get();
+  if (!productSnapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const product = productSnapshot.data();
+  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  const category = categoryByType[product.type];
+  if (!category || !product.storagePath || !product.storageFileName ||
+      ![`protected_file/${category}`, `protected_file/${category}/${productId}`].includes(product.storagePath) ||
+      /[\\/]/.test(product.storageFileName)) {
+    throw new functions.https.HttpsError("failed-precondition", "Product file path is missing.");
+  }
+  const fileName = String(product.storageFileName).replace(/[\\"\r\n]/g, "_");
+  const [downloadUrl] = await bucket.file(`${product.storagePath}/${product.storageFileName}`).getSignedUrl({
+    version: "v4",
+    action: "read",
+    expires: Date.now() + 5 * 60 * 1000,
+    responseDisposition: `attachment; filename="${fileName}"`
+  });
+  return { downloadUrl, fileName };
+});
+
+exports.getProductsSummary = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productIds = [...new Set((Array.isArray(data.productIds) ? data.productIds : [])
+    .filter((id) => typeof id === "string" && /^[a-zA-Z0-9_-]{3,80}$/.test(id)))];
+  if (productIds.length > 30) {
+    throw new functions.https.HttpsError("invalid-argument", "Request at most 30 product IDs at a time.");
+  }
+  const summaries = Object.fromEntries(productIds.map((id) => [id, { sales: 0, revenueCents: 0 }]));
+  if (!productIds.length) return { summaries };
+
+  const payments = await db.collection("payments").where("productId", "in", productIds).get();
+  payments.forEach((payment) => {
+    const data = payment.data();
+    if (data.status !== "completed" || !summaries[data.productId]) return;
+    summaries[data.productId].sales += 1;
+    if (Number.isFinite(data.amount)) summaries[data.productId].revenueCents += data.amount;
+  });
+  return { summaries };
+});
+
+exports.duplicateProduct = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const sourceId = String(data.productId || "").trim();
+  const sourceRef = db.collection("products").doc(sourceId);
+  const sourceSnapshot = await sourceRef.get();
+  if (!sourceSnapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const source = sourceSnapshot.data();
+  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  const category = categoryByType[source.type];
+  if (!category || !["protected_file/" + category, `protected_file/${category}/${sourceId}`].includes(source.storagePath) ||
+      !source.storageFileName || /[\\/]/.test(source.storageFileName) || source.archivedAt) {
+    throw new functions.https.HttpsError("failed-precondition", "This product cannot be duplicated.");
+  }
+
+  const sourcePath = `${source.storagePath}/${source.storageFileName}`;
+  const [sourceExists] = await bucket.file(sourcePath).exists();
+  if (!sourceExists) throw new functions.https.HttpsError("not-found", "The original product file is missing.");
+
+  const base = String(source.name || sourceId).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 42) || "product";
+  const productId = `${base}-copy-${crypto.randomUUID().slice(0, 8)}`;
+  const name = `${String(source.name || sourceId).slice(0, 112)} (copia)`;
+  const storagePath = `protected_file/${category}/${productId}`;
+  const destinationPath = `${storagePath}/${source.storageFileName}`;
+  const productRef = db.collection("products").doc(productId);
+  const offerRef = db.collection("offers").doc(`product_${productId}`);
+  const createdBy = { uid: context.auth.uid, email: context.auth.token.email || null };
+  const duplicate = {
+    ...source,
+    productId,
+    name,
+    active: false,
+    storagePath,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdBy,
+    counters: { downloads: 0, total: 0 }
+  };
+  ["publicUrl", "qrCodePath", "qrCodeGeneratedAt", "archivedAt", "archivedBy", "updatedAt", "updatedBy", "revisedAt", "revisedBy"].forEach((field) => delete duplicate[field]);
+
+  await productRef.create(duplicate);
+  await offerRef.set({ productId, name, title: name, slug: productId, campaignId: "qrc", active: false }, { merge: true });
+  try {
+    await bucket.file(sourcePath).copy(bucket.file(destinationPath));
+  } catch (error) {
+    await Promise.allSettled([productRef.delete(), offerRef.delete(), bucket.file(destinationPath).delete({ ignoreNotFound: true })]);
+    throw new functions.https.HttpsError("internal", "Could not copy the product file.");
+  }
+  return { productId, name, publicUrl: `https://asaratiqrc.web.app/p/${productId}` };
+});
+
+// Keep the original us-central1 trigger deployed as a no-op during migration.
+// Storage events must be handled in the bucket's europe-west1 location.
+exports.generateProductQr = functions.storage.object().onFinalize(async () => null);
+
+exports.generateProductQrEurope = functions.region("europe-west1").storage.object().onFinalize(async (object) => {
+  const objectPath = object.name || "";
+  const match = objectPath.match(/^protected_file\/(eBook|audioBook|boxBook)\/([a-zA-Z0-9_-]{3,80})\/([^/]+)$/);
+  if (!match) return null;
+  const [, category, productId, fileName] = match;
+  const productRef = db.collection("products").doc(productId);
+  const productSnapshot = await productRef.get();
+  if (!productSnapshot.exists) return null;
+  const product = productSnapshot.data();
+  if (product.archivedAt) return null;
+  if (product.storagePath !== `protected_file/${category}/${productId}` || product.storageFileName !== fileName) return null;
+
+  const publicUrl = `https://asaratiqrc.web.app/p/${productId}`;
+  const qrCodePath = `public_qrcodes/${productId}.svg`;
+  const svg = await QRCode.toString(publicUrl, { type: "svg", errorCorrectionLevel: "M", margin: 2 });
+  await bucket.file(qrCodePath).save(svg, {
+    resumable: false,
+    metadata: { contentType: "image/svg+xml", cacheControl: "public, max-age=31536000, immutable" }
+  });
+  await db.collection("offers").doc(`product_${productId}`).update({ active: true });
+  await productRef.update({ publicUrl, qrCodePath, qrCodeGeneratedAt: admin.firestore.FieldValue.serverTimestamp(), active: true });
+  return null;
+});
+
+function priceToMinorUnits(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.round(value * 100);
+  }
+
+  if (typeof value !== "string") return null;
+
+  const cleaned = value.trim().replace(/[^\d,.-]/g, "");
+  const normalized = cleaned.includes(",")
+    ? cleaned.replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".")
+    : cleaned;
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) && parsed >= 0
+    ? Math.round(parsed * 100)
+    : null;
+}
+
 console.log("⚙️ Stripe MODE:", isTest ? "TEST" : "LIVE");
 console.log("🔑 Stripe KEY:", stripeSecret?.slice(-6));
 
@@ -32,7 +343,20 @@ exports.createPayment = functions.https.onRequest( async (req, res) => {
   if (req.method === "OPTIONS") return res.status(204).send("");
   if (req.method !== "POST") return res.status(405).send("POST only");
 
-  const { productId, email, newsletterConsent, paymentMethod } = req.body;
+  const {
+    productId,
+    email,
+    newsletterConsent,
+    paymentMethod,
+    source,
+    offerId
+  } = req.body;
+
+  const paymentSource = source === "qrc" ? "qrc" : "web";
+  const normalizedOfferId =
+    typeof offerId === "string" && offerId.trim()
+      ? offerId.trim()
+      : null;
 
   switch (
   paymentMethod
@@ -125,19 +449,32 @@ exports.createPayment = functions.https.onRequest( async (req, res) => {
       .send("Missing params");
   }
 
-  const prices = {
-    ebook01: 1999,
-    audiobook01: 2999,
-    boxbook01: 4999
-  };
+  const productSnapshot =
+    await db.collection("products")
+      .doc(productId)
+      .get();
 
-const amount =
-  prices[productId];
+  if (!productSnapshot.exists) {
+    return res.status(404).send("Product not found");
+  }
 
-if (!amount) {
-  return res
-    .status(400)
-    .send("Invalid product");
+  const product = productSnapshot.data();
+  if (
+    product.active !== undefined &&
+    product.active !== true &&
+    product.active !== "true"
+  ) {
+    return res.status(400).send("Product inactive");
+  }
+
+  const amount = priceToMinorUnits(product.price);
+  if (amount === null || amount <= 0) {
+    return res.status(400).send("Invalid product price");
+  }
+
+  const currency = String(product.currency || "eur").toLowerCase();
+  if (currency !== "eur") {
+    return res.status(400).send("Unsupported product currency");
   }
 
   console.log(
@@ -171,12 +508,15 @@ if (!amount) {
 
       case "stripe":
 
-        return await
+          return await
           createStripePayment({
             productId,
             normalizedEmail,
             amount,
+            currency,
             newsletterConsent,
+            source: paymentSource,
+            offerId: normalizedOfferId,
             res
           });
 
@@ -334,6 +674,12 @@ if (event.type === "payment_intent.succeeded") {
   const productId =
     metadata.productId || null;
 
+  const source =
+    metadata.source === "qrc" ? "qrc" : "web";
+
+  const offerId =
+    metadata.offerId || null;
+
   const email =
     metadata.email?.toLowerCase();
 
@@ -365,10 +711,17 @@ await paymentRef.set({
 
   productId,
 
+  source,
+
+  ...(offerId ? { offerId } : {}),
+
   email,
 
   amount:
     paymentIntent.amount,
+
+  currency:
+    paymentIntent.currency.toUpperCase(),
 
   status: "completed",
 
@@ -676,10 +1029,12 @@ if (!payment.downloaded) {
 // 5. Log download (sempre)
 // ====================================
 
-await db.collection("downloads").add({
+  await db.collection("downloads").add({
   paymentIntentId,
   productId,
   email: payment.email,
+  source: payment.source || "web",
+  ...(payment.offerId ? { offerId: payment.offerId } : {}),
   downloadedAt:
     admin.firestore.FieldValue.serverTimestamp()
 });
@@ -731,6 +1086,9 @@ async function createStripePayment({
   normalizedEmail,
   amount,
   newsletterConsent,
+  source,
+  offerId,
+  currency,
   res
 
 }) {
@@ -742,8 +1100,7 @@ async function createStripePayment({
 
         amount,
 
-        currency:
-          "eur",
+        currency,
 
         automatic_payment_methods: {
           enabled: true
@@ -759,7 +1116,11 @@ async function createStripePayment({
           newsletterConsent:
             newsletterConsent
               ? "true"
-              : "false"
+              : "false",
+
+          source: source || "web",
+
+          ...(offerId ? { offerId } : {})
         },
 
         receipt_email:
@@ -797,7 +1158,11 @@ async function createStripePayment({
 
     clientSecret:
       paymentIntent
-        .client_secret
+        .client_secret,
+
+    amount: paymentIntent.amount,
+
+    currency: paymentIntent.currency.toUpperCase()
   });
 }
 

@@ -60,7 +60,11 @@ export function initPaymentModal() {
         )
         .onclick = () => {
 
-        window.closePaymentModal();
+        window.closePaymentModal(true);
+    };
+
+    document.getElementById('cancel-payment-btn').onclick = () => {
+        window.closePaymentModal(true);
     };
 
 // Listener sui tasti pagamento
@@ -101,7 +105,7 @@ export function initPaymentModal() {
                     paymentModal
                 ) {
 
-                    window.closePaymentModal();
+                    window.closePaymentModal(true);
                 }
             }
         );
@@ -171,7 +175,7 @@ function setPaymentMode(
 // =========================
 
 window.closePaymentModal =
-function () {
+function (returnToProducts = false) {
 
     document
         .getElementById(
@@ -186,6 +190,10 @@ function () {
     setPaymentMode(
         'form'
     );
+
+    if (returnToProducts) {
+        window.showProductsModal?.();
+    }
 
     console.log(
         '🔒 payment modal chiusa'
