@@ -42,7 +42,7 @@
     .summary-table a { color: #1d4ed8; text-decoration: underline; text-underline-offset: 3px; }
     .summary-table a:hover { color: #1e40af; }
     .total-downloads { margin: 0 0 14px; color: #273448; font-weight: 600; }
-    .upload-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 8px; }
+    .upload-title { display: grid; justify-items: start; gap: 3px; }
     .upload-extensions { font-size: .68em; font-weight: 400; white-space: nowrap; color: #64748b; }
     .product-card h3 { margin: 0 0 8px; font-size: 1.08rem; }
     .product-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; color: #526074; font-size: .9rem; }
@@ -78,7 +78,7 @@
   <div class="upload-grid">
   <section class="upload-card">
 
-  <h2 class="upload-title">Carica eBook <span class="upload-extensions">(.epub | .pdf | .zip)</span></h2>
+  <h2 class="upload-title"><span>Carica eBook</span><span class="upload-extensions">(.epub | .pdf | .zip)</span></h2>
   <input type="text" id="ebookName" placeholder="Titolo prodotto">
   <input type="text" id="ebookDescription" placeholder="Descrizione">
   <input type="file" id="ebookInput" accept=".epub, .pdf, .zip">
@@ -90,7 +90,7 @@
   <p id="ebookFileId"></p>
   </section>
 
-  <section class="upload-card"><h2 class="upload-title">Carica AudioBook <span class="upload-extensions">(.mp3 | .m4a | .m4b | .mp4 | .zip)</span></h2>
+  <section class="upload-card"><h2 class="upload-title"><span>Carica AudioBook</span><span class="upload-extensions">(.mp3 | .m4a | .m4b | .mp4 | .zip)</span></h2>
   <input type="text" id="audiobookName" placeholder="Titolo prodotto">
   <input type="text" id="audiobookDescription" placeholder="Descrizione">
   <input type="file" id="audiobookInput" accept=".mp3,.m4a,.m4b,.mp4,.zip,audio/*">
@@ -102,7 +102,7 @@
   <p id="audiobookFileId"></p>
   </section>
 
-  <section class="upload-card"><h2 class="upload-title">Carica boxBook <span class="upload-extensions">(.zip | .mp4)</span></h2>
+  <section class="upload-card"><h2 class="upload-title"><span>Carica boxBook</span><span class="upload-extensions">(.zip | .mp4)</span></h2>
   <input type="text" id="boxbookName" placeholder="Titolo prodotto">
   <input type="text" id="boxbookDescription" placeholder="Descrizione">
   <input type="file" id="fileZipInput" accept=".zip,.mp4">
