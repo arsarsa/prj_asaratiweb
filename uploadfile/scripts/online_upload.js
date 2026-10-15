@@ -15,9 +15,13 @@ const restoreProduct = httpsCallable(functions, "restoreProduct");
 const createProductDownloadUrl = httpsCallable(functions, "createProductDownloadUrl");
 const duplicateProduct = httpsCallable(functions, "duplicateProduct");
 const getProductsSummary = httpsCallable(functions, "getProductsSummary");
-const bucket = "asarati-9aafe.firebasestorage.app";
+const createProductQrDownloadUrl = httpsCallable(functions, "createProductQrDownloadUrl");
+const createProductTrailerUpload = httpsCallable(functions, "createProductTrailerUpload");
+const recordProductTrailer = httpsCallable(functions, "recordProductTrailer");
+const getProductTrailerUrl = httpsCallable(functions, "getProductTrailerUrl");
 let editingProduct = null;
 let revisionProduct = null;
+let trailerProductId = null;
 
 onAuthStateChanged(auth, (user) => {
   document.getElementById("loginModal").classList.toggle("show", !user);
@@ -29,12 +33,9 @@ function makeProductId(name) {
   return `${base || "product"}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-function publicStorageUrl(path) {
-  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`;
-}
-
-async function uploadProduct({ fileInput, nameInput, descriptionInput, priceInput, message, result, type }) {
+async function uploadProduct({ fileInput, trailerInput, nameInput, descriptionInput, priceInput, message, result, type }) {
   const file = document.getElementById(fileInput).files[0];
+  const trailerFile = trailerInput ? document.getElementById(trailerInput).files[0] : null;
   const name = document.getElementById(nameInput).value.trim();
   const description = document.getElementById(descriptionInput).value.trim();
   const price = document.getElementById(priceInput).value.trim();
@@ -44,8 +45,14 @@ async function uploadProduct({ fileInput, nameInput, descriptionInput, priceInpu
   resultEl.replaceChildren();
 
   if (!auth.currentUser) return messageEl.textContent = "Accedi con un account amministratore.";
-  if (!file || !name || !description || !/^\d+([.,]\d{1,2})?$/.test(price)) {
-    return messageEl.textContent = "Inserisci file, titolo, descrizione e prezzo valido.";
+  const allowedExtensions = {
+    ebook: ["epub", "pdf", "zip"],
+    audiobook: ["mp3", "m4a", "m4b", "mp4", "zip"],
+    boxbook: ["zip", "mp4"]
+  };
+  const extension = file?.name.split(".").pop().toLowerCase();
+  if (!file || !allowedExtensions[type]?.includes(extension) || (trailerFile && !trailerFile.name.toLowerCase().endsWith(".mp4")) || !name || !description || !/^\d+([.,]\d{1,2})?$/.test(price)) {
+    return messageEl.textContent = "Controlla file, estensione, titolo, descrizione e prezzo. Il trailer deve essere MP4.";
   }
 
   const draftKey = `product-upload:${name}:${file.name}:${file.lastModified}`;
@@ -54,10 +61,20 @@ async function uploadProduct({ fileInput, nameInput, descriptionInput, priceInpu
   const contentType = file.type || "application/octet-stream";
   messageEl.textContent = "Creo il prodotto e preparo l'upload sicuro…";
   try {
-    const response = await createProductUpload({ productId, name, description, type, price, fileName: file.name, contentType });
-    const { uploadUrl, publicUrl } = response.data;
+    const response = await createProductUpload({
+      productId, name, description, type, price,
+      fileName: file.name, contentType,
+      trailerFileName: trailerFile?.name || "",
+      trailerContentType: trailerFile?.type || "video/mp4"
+    });
+    const { uploadUrl, trailerUploadUrl, trailerPath, publicUrl } = response.data;
     const uploaded = await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": contentType }, body: file });
     if (!uploaded.ok) throw new Error(`Upload non riuscito (${uploaded.status}).`);
+    if (trailerFile && trailerUploadUrl) {
+      const trailerUploaded = await fetch(trailerUploadUrl, { method: "PUT", headers: { "Content-Type": "video/mp4" }, body: trailerFile });
+      if (!trailerUploaded.ok) throw new Error(`Upload trailer non riuscito (${trailerUploaded.status}).`);
+      await recordProductTrailer({ productId, trailerPath });
+    }
 
     messageEl.textContent = "File caricato. Attendo la generazione automatica del QR…";
     let ready = false;
@@ -68,13 +85,14 @@ async function uploadProduct({ fileInput, nameInput, descriptionInput, priceInpu
     }
     if (!ready) throw new Error("Upload completato, ma il QR non è ancora pronto. Riprova tra poco.");
     const qrPath = `public_qrcodes/${productId}.svg`;
+    const { data: qrUrls } = await createProductQrDownloadUrl({ productId });
     const link = document.createElement("a");
     link.href = publicUrl;
     link.target = "_blank";
     link.rel = "noopener";
     link.textContent = `Apri pagina prodotto: ${publicUrl}`;
     const qrPreview = document.createElement("img");
-    qrPreview.src = publicStorageUrl(qrPath);
+    qrPreview.src = qrUrls.previewUrl;
     qrPreview.alt = `QR code per ${name}`;
     qrPreview.width = 180;
     qrPreview.style.display = "block";
@@ -85,6 +103,7 @@ async function uploadProduct({ fileInput, nameInput, descriptionInput, priceInpu
     await displayUploadedProducts(type, listId);
     messageEl.textContent = "Prodotto pubblicato. QR e pagina stabile sono pronti.";
     sessionStorage.removeItem(draftKey);
+    if (trailerInput) document.getElementById(trailerInput).value = "";
   } catch (error) {
     console.error(error);
     messageEl.textContent = error.code ? `${error.code}: ${error.message}` : error.message || "Errore durante la creazione del prodotto.";
@@ -124,6 +143,7 @@ async function displayUploadedProducts(type, containerId) {
         ["Prezzo", `${product.price || "—"} €`], ["Stato", status],
         ["Caricato il", formatDate(product.createdAt)], ["Caricato da", createdBy.email || "Non registrato"],
         ["ID autore", createdBy.uid || "Non registrato"], ["ID prodotto", id],
+        ["Trailer", product.trailerPath ? "Personalizzato" : "Trailer generale"],
         ["Ultima revisione", formatDate(product.revisedAt)], ["Modificato da", updatedBy.email || "—"],
         ["Vendite pagate", String(summary.sales ?? "—")],
         ["Incasso lordo", summary.revenueCents === undefined ? "—" : formatCents(summary.revenueCents)],
@@ -142,7 +162,8 @@ async function displayUploadedProducts(type, containerId) {
       const actions = document.createElement("div");
       actions.className = "product-actions";
 
-      actions.append(actionButton("Anteprima trailer", openTrailerPreview));
+      actions.append(actionButton("Anteprima trailer", () => openTrailerPreview(id)));
+      actions.append(actionButton(product.trailerPath ? "Sostituisci trailer" : "Carica trailer", () => chooseProductTrailer(id)));
       actions.append(actionButton("Scarica file originale", () => downloadOriginal(id)));
       if (qrReady) {
         actions.append(actionButton("Scarica QR SVG", () => downloadQr(product.qrCodePath, id)));
@@ -213,45 +234,148 @@ function refreshProducts() {
   void displayUploadedProducts("ebook", "ebookList");
   void displayUploadedProducts("audiobook", "audioList");
   void displayUploadedProducts("boxbook", "boxList");
+  void renderProductSummary();
+}
+
+async function renderProductSummary() {
+  const container = document.getElementById("productSummary");
+  container.textContent = "Caricamento riepilogo…";
+  try {
+    const snapshot = await getDocs(collection(db, "products"));
+    const products = snapshot.docs
+      .map((item) => ({ id: item.id, product: item.data() }))
+      .filter(({ product }) => ["ebook", "audiobook", "boxbook"].includes(product.type))
+      .sort((a, b) => String(a.product.name || a.id).localeCompare(String(b.product.name || b.id), "it"));
+    if (!products.length) {
+      container.textContent = "Non ci sono ancora prodotti.";
+      return;
+    }
+    const summaries = await loadProductSummaries(products.map(({ id }) => id));
+    const table = document.createElement("table");
+    table.className = "summary-table";
+    const head = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    ["Titolo prodotto", "Prezzo", "Visualizzazioni", "Download", "Abb. newsletter", "Vendite pagate", "Incasso lordo"]
+      .forEach((label) => {
+        const cell = document.createElement("th");
+        cell.scope = "col";
+        cell.textContent = label;
+        headerRow.append(cell);
+      });
+    head.append(headerRow);
+    table.append(head);
+    const body = document.createElement("tbody");
+    for (const { id, product } of products) {
+      const summary = summaries[id] || {};
+      const row = document.createElement("tr");
+      const title = product.name || id;
+      const values = [
+        product.archivedAt ? `${title} (archiviato)` : title,
+        formatPriceLabel(product.price),
+        String(product.counters?.views ?? 0),
+        String(product.counters?.downloads ?? 0),
+        String(summary.newsletterSubscribers ?? 0),
+        String(summary.sales ?? 0),
+        formatCents(summary.revenueCents ?? 0)
+      ];
+      values.forEach((value) => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.append(cell);
+      });
+      body.append(row);
+    }
+    table.append(body);
+    container.replaceChildren(table);
+  } catch (error) {
+    container.textContent = `Riepilogo non disponibile: ${error.message}`;
+  }
+}
+
+function formatPriceLabel(value) {
+  const normalized = Number(String(value ?? "").trim().replace(",", "."));
+  return Number.isFinite(normalized)
+    ? new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(normalized)
+    : "—";
 }
 
 async function downloadQr(path, productId) {
   try {
-    const response = await fetch(publicStorageUrl(path));
-    if (!response.ok) throw new Error(`Download QR non riuscito (${response.status}).`);
-    const objectUrl = URL.createObjectURL(await response.blob());
-    const link = document.createElement("a");
-    link.href = objectUrl;
-    link.download = `${productId}-qr.svg`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    const { data } = await createProductQrDownloadUrl({ productId });
+    triggerDownload(data.downloadUrl);
   } catch (error) {
-    window.alert(error.message || "Non è stato possibile scaricare il QR.");
+    window.alert(error.message || `Non è stato possibile scaricare il QR ${path || productId}.`);
   }
+}
+
+function triggerDownload(url) {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.tabIndex = -1;
+  frame.style.position = "fixed";
+  frame.style.width = "1px";
+  frame.style.height = "1px";
+  frame.style.opacity = "0";
+  frame.src = url;
+  document.body.append(frame);
+  window.setTimeout(() => frame.remove(), 60_000);
 }
 
 async function downloadOriginal(productId) {
   try {
     const { data } = await createProductDownloadUrl({ productId });
-    const link = document.createElement("a");
-    link.href = data.downloadUrl;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.click();
+    triggerDownload(data.downloadUrl);
   } catch (error) {
     window.alert(error.message || "Non è stato possibile scaricare il file originale.");
   }
 }
 
-function openTrailerPreview() {
+async function openTrailerPreview(productId) {
   const modal = document.getElementById("trailerModal");
   const player = document.getElementById("trailerPlayer");
   modal.classList.add("show");
-  player.src = publicStorageUrl("public_file/trailer.mp4");
+  player.removeAttribute("src");
   player.load();
+  try {
+    const { data } = await getProductTrailerUrl({ productId });
+    player.src = data.previewUrl;
+    player.load();
+  } catch (error) {
+    modal.classList.remove("show");
+    window.alert(error.message || "Trailer non disponibile.");
+  }
 }
+
+function chooseProductTrailer(productId) {
+  trailerProductId = productId;
+  const input = document.getElementById("productTrailerFileInput");
+  input.value = "";
+  input.click();
+}
+
+document.getElementById("productTrailerFileInput").addEventListener("change", async (event) => {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
+  const productId = trailerProductId;
+  trailerProductId = null;
+  if (!file || !productId) return;
+  if (!file.name.toLowerCase().endsWith(".mp4")) {
+    window.alert("Il trailer deve essere un file MP4.");
+    return;
+  }
+  try {
+    const { data } = await createProductTrailerUpload({ productId });
+    const response = await fetch(data.uploadUrl, { method: "PUT", headers: { "Content-Type": "video/mp4" }, body: file });
+    if (!response.ok) throw new Error(`Upload trailer non riuscito (${response.status}).`);
+    await recordProductTrailer({ productId, trailerPath: data.trailerPath });
+    refreshProducts();
+    window.alert("Trailer aggiornato.");
+  } catch (error) {
+    window.alert(error.message || "Impossibile aggiornare il trailer.");
+  } finally {
+    input.value = "";
+  }
+});
 
 function closeTrailerPreview() {
   const player = document.getElementById("trailerPlayer");
@@ -375,14 +499,14 @@ async function restoreArchivedProduct(productId) {
 
 function bind(button, folder, type) {
   document.getElementById(button).addEventListener("click", () => uploadProduct({
-    fileInput: folder.file, nameInput: folder.name, descriptionInput: folder.description,
+    fileInput: folder.file, trailerInput: folder.trailer, nameInput: folder.name, descriptionInput: folder.description,
     priceInput: folder.price, message: folder.message, result: folder.result, type
   }));
 }
 
-bind("uploadEbookButton", { file: "ebookInput", name: "ebookName", description: "ebookDescription", price: "ebookPrice", message: "ebookMessage", result: "ebookFileId" }, "ebook");
-bind("uploadaudiobookButton", { file: "audiobookInput", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
-bind("uploadfileZipButton", { file: "fileZipInput", name: "boxbookName", description: "boxbookDescription", price: "fileZipPrice", message: "fileZipMessage", result: "fileZipFileId" }, "boxbook");
+bind("uploadEbookButton", { file: "ebookInput", trailer: "ebookTrailerInput", name: "ebookName", description: "ebookDescription", price: "ebookPrice", message: "ebookMessage", result: "ebookFileId" }, "ebook");
+bind("uploadaudiobookButton", { file: "audiobookInput", trailer: "audiobookTrailerInput", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
+bind("uploadfileZipButton", { file: "fileZipInput", trailer: "boxbookTrailerInput", name: "boxbookName", description: "boxbookDescription", price: "fileZipPrice", message: "fileZipMessage", result: "boxbookFileId" }, "boxbook");
 
 const toggleBtn = document.getElementById("toggleFilesBtn");
 const fileSections = ["ebookList", "audioList", "boxList"];

@@ -41,14 +41,24 @@ exports.createProductUpload = functions.https.onCall(async (data, context) => {
   const description = String(data.description || "").trim();
   const price = String(data.price || "").trim().replace(",", ".");
   const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  const extension = fileName.split(".").pop().toLowerCase();
+  const allowedExtensions = {
+    ebook: ["epub", "pdf", "zip"],
+    audiobook: ["mp3", "m4a", "m4b", "mp4", "zip"],
+    boxbook: ["zip", "mp4"]
+  };
+  const trailerFileName = String(data.trailerFileName || "").trim();
+  const hasTrailer = Boolean(trailerFileName);
   if (!/^[a-zA-Z0-9_-]{3,80}$/.test(productId) || !name || !categoryByType[type] ||
-      !/^[^/\\]+\.(zip|epub|pdf|mp3)$/i.test(fileName) || !/^\d+(\.\d{1,2})?$/.test(price) ||
+      !/^[^/\\]+\.[a-z0-9]{2,5}$/i.test(fileName) || !allowedExtensions[type].includes(extension) ||
+      (hasTrailer && !/^[^/\\]+\.mp4$/i.test(trailerFileName)) || !/^\d+(\.\d{1,2})?$/.test(price) ||
       Number(price) <= 0 || !description) {
     throw new functions.https.HttpsError("invalid-argument", "Product details are invalid.");
   }
 
   const storagePath = `protected_file/${categoryByType[type]}/${productId}`;
   const objectPath = `${storagePath}/${fileName}`;
+  const trailerPath = hasTrailer ? `public_file/product_trailers/${productId}.mp4` : null;
   const productRef = db.collection("products").doc(productId);
   const existing = await productRef.get();
   if (existing.exists && (existing.get("active") === true || existing.get("archivedAt"))) {
@@ -70,7 +80,102 @@ exports.createProductUpload = functions.https.onCall(async (data, context) => {
     version: "v4", action: "write", expires: Date.now() + 15 * 60 * 1000,
     contentType: String(data.contentType || "application/octet-stream")
   });
-  return { uploadUrl, objectPath, publicUrl: `https://asaratiqrc.web.app/p/${productId}` };
+  let trailerUploadUrl = null;
+  if (hasTrailer) {
+    [trailerUploadUrl] = await bucket.file(trailerPath).getSignedUrl({
+      version: "v4", action: "write", expires: Date.now() + 15 * 60 * 1000,
+      contentType: "video/mp4"
+    });
+  }
+  return { uploadUrl, objectPath, trailerUploadUrl, trailerPath, publicUrl: `https://asaratiqrc.web.app/p/${productId}` };
+});
+
+exports.createProductTrailerUpload = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productId = String(data.productId || "").trim();
+  if (!/^[a-zA-Z0-9_-]{3,80}$/.test(productId)) {
+    throw new functions.https.HttpsError("invalid-argument", "Product ID is invalid.");
+  }
+  const productRef = db.collection("products").doc(productId);
+  const snapshot = await productRef.get();
+  if (!snapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const trailerPath = `public_file/product_trailers/${productId}.mp4`;
+  const [uploadUrl] = await bucket.file(trailerPath).getSignedUrl({
+    version: "v4", action: "write", expires: Date.now() + 15 * 60 * 1000,
+    contentType: "video/mp4"
+  });
+  return { uploadUrl, trailerPath };
+});
+
+exports.getProductTrailerUrl = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productId = String(data.productId || "").trim();
+  if (!/^[a-zA-Z0-9_-]{3,80}$/.test(productId)) {
+    throw new functions.https.HttpsError("invalid-argument", "Product ID is invalid.");
+  }
+  const snapshot = await db.collection("products").doc(productId).get();
+  if (!snapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const configuredPath = snapshot.get("trailerPath");
+  const trailerPath = typeof configuredPath === "string" && configuredPath === `public_file/product_trailers/${productId}.mp4`
+    ? configuredPath
+    : "public_file/trailer.mp4";
+  const [exists] = await bucket.file(trailerPath).exists();
+  if (!exists) throw new functions.https.HttpsError("not-found", "Trailer non disponibile per questo prodotto.");
+  const [previewUrl] = await bucket.file(trailerPath).getSignedUrl({
+    version: "v4", action: "read", expires: Date.now() + 60 * 60 * 1000
+  });
+  return { previewUrl };
+});
+
+exports.recordProductTrailer = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productId = String(data.productId || "").trim();
+  const trailerPath = `public_file/product_trailers/${productId}.mp4`;
+  if (!/^[a-zA-Z0-9_-]{3,80}$/.test(productId) || data.trailerPath !== trailerPath) {
+    throw new functions.https.HttpsError("invalid-argument", "Trailer path is invalid.");
+  }
+  const [exists] = await bucket.file(trailerPath).exists();
+  if (!exists) throw new functions.https.HttpsError("not-found", "Trailer upload was not found.");
+  await db.collection("products").doc(productId).update({
+    trailerPath,
+    trailerUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedBy: { uid: context.auth.uid, email: context.auth.token.email || null }
+  });
+  return { success: true, trailerPath };
+});
+
+exports.createProductQrDownloadUrl = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+  const productId = String(data.productId || "").trim();
+  if (!/^[a-zA-Z0-9_-]{3,80}$/.test(productId)) {
+    throw new functions.https.HttpsError("invalid-argument", "Product ID is invalid.");
+  }
+  const snapshot = await db.collection("products").doc(productId).get();
+  if (!snapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const qrPath = `public_qrcodes/${productId}.svg`;
+  if (snapshot.get("qrCodePath") !== qrPath || !snapshot.get("qrCodeGeneratedAt")) {
+    throw new functions.https.HttpsError("failed-precondition", "QR code is not ready.");
+  }
+  const [exists] = await bucket.file(qrPath).exists();
+  if (!exists) throw new functions.https.HttpsError("not-found", "QR code file is missing.");
+  const [downloadUrl] = await bucket.file(qrPath).getSignedUrl({
+    version: "v4", action: "read", expires: Date.now() + 5 * 60 * 1000,
+    responseDisposition: `attachment; filename="${productId}-qr.svg"`
+  });
+  const [previewUrl] = await bucket.file(qrPath).getSignedUrl({
+    version: "v4", action: "read", expires: Date.now() + 5 * 60 * 1000,
+    responseDisposition: "inline"
+  });
+  return { downloadUrl, previewUrl };
 });
 
 exports.updateProductDetails = functions.https.onCall(async (data, context) => {
@@ -223,7 +328,9 @@ exports.getProductsSummary = functions.https.onCall(async (data, context) => {
   if (productIds.length > 30) {
     throw new functions.https.HttpsError("invalid-argument", "Request at most 30 product IDs at a time.");
   }
-  const summaries = Object.fromEntries(productIds.map((id) => [id, { sales: 0, revenueCents: 0 }]));
+  const summaries = Object.fromEntries(productIds.map((id) => [id, {
+    sales: 0, revenueCents: 0, newsletterEmails: new Set()
+  }]));
   if (!productIds.length) return { summaries };
 
   const payments = await db.collection("payments").where("productId", "in", productIds).get();
@@ -232,6 +339,21 @@ exports.getProductsSummary = functions.https.onCall(async (data, context) => {
     if (data.status !== "completed" || !summaries[data.productId]) return;
     summaries[data.productId].sales += 1;
     if (Number.isFinite(data.amount)) summaries[data.productId].revenueCents += data.amount;
+    if (data.newsletterConsent === true && typeof data.email === "string") {
+      summaries[data.productId].newsletterEmails.add(data.email.toLowerCase());
+    }
+  });
+  const activeSubscribers = await db.collection("subscribers").where("subscribed", "==", true).get();
+  const activeSubscriberEmails = new Set(activeSubscribers.docs.map((item) =>
+    String(item.get("email") || item.id).toLowerCase()
+  ));
+  Object.keys(summaries).forEach((productId) => {
+    const consentedEmails = summaries[productId].newsletterEmails;
+    summaries[productId] = {
+      sales: summaries[productId].sales,
+      revenueCents: summaries[productId].revenueCents,
+      newsletterSubscribers: [...consentedEmails].filter((email) => activeSubscriberEmails.has(email)).length
+    };
   });
   return { summaries };
 });
@@ -275,14 +397,30 @@ exports.duplicateProduct = functions.https.onCall(async (data, context) => {
     createdBy,
     counters: { downloads: 0, total: 0 }
   };
+  const sourceTrailerPath = source.trailerPath === `public_file/product_trailers/${sourceId}.mp4`
+    ? source.trailerPath
+    : null;
+  const duplicateTrailerPath = sourceTrailerPath
+    ? `public_file/product_trailers/${productId}.mp4`
+    : null;
+  if (duplicateTrailerPath) duplicate.trailerPath = duplicateTrailerPath;
   ["publicUrl", "qrCodePath", "qrCodeGeneratedAt", "archivedAt", "archivedBy", "updatedAt", "updatedBy", "revisedAt", "revisedBy"].forEach((field) => delete duplicate[field]);
 
   await productRef.create(duplicate);
   await offerRef.set({ productId, name, title: name, slug: productId, campaignId: "qrc", active: false }, { merge: true });
   try {
+    if (sourceTrailerPath && duplicateTrailerPath) {
+      const [trailerExists] = await bucket.file(sourceTrailerPath).exists();
+      if (trailerExists) await bucket.file(sourceTrailerPath).copy(bucket.file(duplicateTrailerPath));
+      if (!trailerExists) await productRef.update({ trailerPath: admin.firestore.FieldValue.delete() });
+    }
     await bucket.file(sourcePath).copy(bucket.file(destinationPath));
   } catch (error) {
-    await Promise.allSettled([productRef.delete(), offerRef.delete(), bucket.file(destinationPath).delete({ ignoreNotFound: true })]);
+    await Promise.allSettled([
+      productRef.delete(), offerRef.delete(),
+      bucket.file(destinationPath).delete({ ignoreNotFound: true }),
+      duplicateTrailerPath ? bucket.file(duplicateTrailerPath).delete({ ignoreNotFound: true }) : Promise.resolve()
+    ]);
     throw new functions.https.HttpsError("internal", "Could not copy the product file.");
   }
   return { productId, name, publicUrl: `https://asaratiqrc.web.app/p/${productId}` };
