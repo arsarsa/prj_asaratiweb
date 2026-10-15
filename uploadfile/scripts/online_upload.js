@@ -129,6 +129,7 @@ async function displayUploadedProducts(type, containerId) {
     for (const { id, product, archived } of products) {
       const row = document.createElement("article");
       row.className = "product-card";
+      row.id = `product-${id}`;
       const qrReady = Boolean(product.qrCodeGeneratedAt && product.qrCodePath);
       const title = document.createElement("h3");
       title.textContent = product.name || id;
@@ -255,7 +256,7 @@ async function renderProductSummary() {
     table.className = "summary-table";
     const head = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    ["Titolo prodotto", "Prezzo", "Visualizzazioni", "Download", "Abb. newsletter", "Vendite pagate", "Incasso lordo"]
+    ["Titolo", "Prezzo", "Visite", "Download", "Newsletter", "Vendite", "Incasso"]
       .forEach((label) => {
         const cell = document.createElement("th");
         cell.scope = "col";
@@ -269,8 +270,26 @@ async function renderProductSummary() {
       const summary = summaries[id] || {};
       const row = document.createElement("tr");
       const title = product.name || id;
+      const titleCell = document.createElement("td");
+      const titleLink = document.createElement("a");
+      titleLink.href = `#product-${id}`;
+      titleLink.textContent = product.archivedAt ? `${title} (archiviato)` : title;
+      titleLink.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const listId = { ebook: "ebookList", audiobook: "audioList", boxbook: "boxList" }[product.type];
+        const showArchived = document.getElementById("showArchivedCheckbox");
+        if (product.archivedAt) showArchived.checked = true;
+        ["ebookList", "audioList", "boxList"].forEach((id) => {
+          document.getElementById(id).style.display = "grid";
+        });
+        document.getElementById("toggleFilesBtn").textContent = "Nascondi prodotti caricati";
+        await displayUploadedProducts(product.type, listId);
+        window.location.hash = `product-${id}`;
+        document.getElementById(`product-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      titleCell.append(titleLink);
+      row.append(titleCell);
       const values = [
-        product.archivedAt ? `${title} (archiviato)` : title,
         formatPriceLabel(product.price),
         String(product.counters?.views ?? 0),
         String(product.counters?.downloads ?? 0),
@@ -289,6 +308,18 @@ async function renderProductSummary() {
     container.replaceChildren(table);
   } catch (error) {
     container.textContent = `Riepilogo non disponibile: ${error.message}`;
+  }
+}
+
+async function renderTotalDownloads() {
+  const total = document.getElementById("totalDownloads");
+  try {
+    const snapshot = await getDoc(doc(db, "stats", "downloads"));
+    const count = snapshot.exists() ? Number(snapshot.data().totalDownloads || 0) : 0;
+    total.textContent = `Download totali: ${new Intl.NumberFormat("it-IT").format(count)}`;
+  } catch (error) {
+    console.error("Unable to load total downloads:", error);
+    total.textContent = "Download totali: non disponibili";
   }
 }
 
@@ -518,3 +549,4 @@ toggleBtn.addEventListener("click", () => {
 document.getElementById("showArchivedCheckbox").addEventListener("change", refreshProducts);
 
 refreshProducts();
+void renderTotalDownloads();
