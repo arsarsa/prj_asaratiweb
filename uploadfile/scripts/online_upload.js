@@ -33,12 +33,14 @@ function makeProductId(name) {
   return `${base || "product"}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
-async function uploadProduct({ fileInput, trailerInput, nameInput, descriptionInput, priceInput, message, result, type }) {
+async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, descriptionInput, priceInput, message, result, type }) {
   const file = document.getElementById(fileInput).files[0];
   const trailerFile = trailerInput ? document.getElementById(trailerInput).files[0] : null;
   const name = document.getElementById(nameInput).value.trim();
   const description = document.getElementById(descriptionInput).value.trim();
-  const price = document.getElementById(priceInput).value.trim();
+  const accessMode = document.getElementById(accessInput).value;
+  const priceInputEl = document.getElementById(priceInput);
+  const price = accessMode === "free" ? "0" : priceInputEl.value.trim();
   const messageEl = document.getElementById(message);
   const resultEl = document.getElementById(result);
   messageEl.textContent = "";
@@ -51,7 +53,8 @@ async function uploadProduct({ fileInput, trailerInput, nameInput, descriptionIn
     boxbook: ["zip", "mp4"]
   };
   const extension = file?.name.split(".").pop().toLowerCase();
-  if (!file || !allowedExtensions[type]?.includes(extension) || (trailerFile && !trailerFile.name.toLowerCase().endsWith(".mp4")) || !name || !description || !/^\d+([.,]\d{1,2})?$/.test(price)) {
+  if (!file || !allowedExtensions[type]?.includes(extension) || (trailerFile && !trailerFile.name.toLowerCase().endsWith(".mp4")) || !name || !description ||
+      !["paid", "free"].includes(accessMode) || (accessMode === "paid" && (!/^\d+([.,]\d{1,2})?$/.test(price) || Number(price.replace(",", ".")) <= 0))) {
     return messageEl.textContent = "Controlla file, estensione, titolo, descrizione e prezzo. Il trailer deve essere MP4.";
   }
 
@@ -62,7 +65,7 @@ async function uploadProduct({ fileInput, trailerInput, nameInput, descriptionIn
   messageEl.textContent = "Creo il prodotto e preparo l'upload sicuro…";
   try {
     const response = await createProductUpload({
-      productId, name, description, type, price,
+      productId, name, description, type, price, accessMode,
       fileName: file.name, contentType,
       trailerFileName: trailerFile?.name || "",
       trailerContentType: trailerFile?.type || "video/mp4"
@@ -101,7 +104,9 @@ async function uploadProduct({ fileInput, trailerInput, nameInput, descriptionIn
     resultEl.append(link, qrPreview, download);
     const listId = { ebook: "ebookList", audiobook: "audioList", boxbook: "boxList" }[type];
     await displayUploadedProducts(type, listId);
-    messageEl.textContent = "Prodotto pubblicato. QR e pagina stabile sono pronti.";
+    messageEl.textContent = accessMode === "free"
+      ? "Prodotto gratuito pubblicato. QR e download dalla pagina QR sono pronti."
+      : "Prodotto pubblicato. QR e pagina stabile sono pronti.";
     sessionStorage.removeItem(draftKey);
     if (trailerInput) document.getElementById(trailerInput).value = "";
   } catch (error) {
@@ -141,7 +146,8 @@ async function displayUploadedProducts(type, containerId) {
       const updatedBy = product.updatedBy || {};
       const summary = summaries[id] || {};
       const values = [
-        ["Prezzo", `${product.price || "—"} €`], ["Stato", status],
+        ["Prezzo", product.accessMode === "free" ? "Gratis" : `${product.price || "—"} €`], ["Stato", status],
+        ["Disponibilità", product.accessMode === "free" ? "Pubblico / gratuito" : "Protetto / pagamento"],
         ["Caricato il", formatDate(product.createdAt)], ["Caricato da", createdBy.email || "Non registrato"],
         ["ID autore", createdBy.uid || "Non registrato"], ["ID prodotto", id],
         ["Trailer", product.trailerPath ? "Personalizzato" : "Trailer generale"],
@@ -290,7 +296,7 @@ async function renderProductSummary() {
       titleCell.append(titleLink);
       row.append(titleCell);
       const values = [
-        formatPriceLabel(product.price),
+        product.accessMode === "free" ? "Gratis" : formatPriceLabel(product.price),
         String(product.counters?.views ?? 0),
         String(product.counters?.downloads ?? 0),
         String(summary.newsletterSubscribers ?? 0),
@@ -445,7 +451,10 @@ function openEditProduct(productId, product) {
   editingProduct = productId;
   document.getElementById("editProductName").value = product.name || "";
   document.getElementById("editProductDescription").value = product.description || "";
-  document.getElementById("editProductPrice").value = String(product.price || "").replace(",", ".");
+  const priceInput = document.getElementById("editProductPrice");
+  priceInput.value = String(product.price ?? "").replace(",", ".");
+  priceInput.readOnly = product.accessMode === "free";
+  priceInput.min = product.accessMode === "free" ? "0" : "0.01";
   document.getElementById("editProductMessage").textContent = "";
   document.getElementById("editProductModal").classList.add("show");
   document.getElementById("editProductName").focus();
@@ -530,14 +539,27 @@ async function restoreArchivedProduct(productId) {
 
 function bind(button, folder, type) {
   document.getElementById(button).addEventListener("click", () => uploadProduct({
-    fileInput: folder.file, trailerInput: folder.trailer, nameInput: folder.name, descriptionInput: folder.description,
+    fileInput: folder.file, trailerInput: folder.trailer, accessInput: folder.access, nameInput: folder.name, descriptionInput: folder.description,
     priceInput: folder.price, message: folder.message, result: folder.result, type
   }));
 }
 
-bind("uploadEbookButton", { file: "ebookInput", trailer: "ebookTrailerInput", name: "ebookName", description: "ebookDescription", price: "ebookPrice", message: "ebookMessage", result: "ebookFileId" }, "ebook");
-bind("uploadaudiobookButton", { file: "audiobookInput", trailer: "audiobookTrailerInput", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
-bind("uploadfileZipButton", { file: "fileZipInput", trailer: "boxbookTrailerInput", name: "boxbookName", description: "boxbookDescription", price: "fileZipPrice", message: "fileZipMessage", result: "boxbookFileId" }, "boxbook");
+bind("uploadEbookButton", { file: "ebookInput", trailer: "ebookTrailerInput", access: "ebookAccessMode", name: "ebookName", description: "ebookDescription", price: "ebookPrice", message: "ebookMessage", result: "ebookFileId" }, "ebook");
+bind("uploadaudiobookButton", { file: "audiobookInput", trailer: "audiobookTrailerInput", access: "audiobookAccessMode", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
+bind("uploadfileZipButton", { file: "fileZipInput", trailer: "boxbookTrailerInput", access: "boxbookAccessMode", name: "boxbookName", description: "boxbookDescription", price: "fileZipPrice", message: "fileZipMessage", result: "boxbookFileId" }, "boxbook");
+
+for (const [accessId, priceId] of [["ebookAccessMode", "ebookPrice"], ["audiobookAccessMode", "audiobookPrice"], ["boxbookAccessMode", "fileZipPrice"]]) {
+  const access = document.getElementById(accessId);
+  const price = document.getElementById(priceId);
+  access.addEventListener("change", () => {
+    const free = access.value === "free";
+    price.readOnly = free;
+    price.min = free ? "0" : "0.01";
+    price.placeholder = free ? "Gratis" : "Prezzo in EUR";
+    if (free) price.value = "0";
+    else if (price.value === "0") price.value = "";
+  });
+}
 
 const toggleBtn = document.getElementById("toggleFilesBtn");
 const fileSections = ["ebookList", "audioList", "boxList"];

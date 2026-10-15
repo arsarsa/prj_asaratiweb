@@ -39,7 +39,8 @@ exports.createProductUpload = functions.https.onCall(async (data, context) => {
   const type = String(data.type || "").trim();
   const fileName = String(data.fileName || "").trim();
   const description = String(data.description || "").trim();
-  const price = String(data.price || "").trim().replace(",", ".");
+  const accessMode = String(data.accessMode || "paid");
+  const price = accessMode === "free" ? "0" : String(data.price || "").trim().replace(",", ".");
   const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
   const extension = fileName.split(".").pop().toLowerCase();
   const allowedExtensions = {
@@ -49,14 +50,15 @@ exports.createProductUpload = functions.https.onCall(async (data, context) => {
   };
   const trailerFileName = String(data.trailerFileName || "").trim();
   const hasTrailer = Boolean(trailerFileName);
-  if (!/^[a-zA-Z0-9_-]{3,80}$/.test(productId) || !name || !categoryByType[type] ||
+  if (!/^[a-zA-Z0-9_-]{3,80}$/.test(productId) || !name || !categoryByType[type] || !["paid", "free"].includes(accessMode) ||
       !/^[^/\\]+\.[a-z0-9]{2,5}$/i.test(fileName) || !allowedExtensions[type].includes(extension) ||
       (hasTrailer && !/^[^/\\]+\.mp4$/i.test(trailerFileName)) || !/^\d+(\.\d{1,2})?$/.test(price) ||
-      Number(price) <= 0 || !description) {
+      (accessMode === "paid" && Number(price) <= 0) || !description) {
     throw new functions.https.HttpsError("invalid-argument", "Product details are invalid.");
   }
 
-  const storagePath = `protected_file/${categoryByType[type]}/${productId}`;
+  const storageRoot = accessMode === "free" ? "public_file" : "protected_file";
+  const storagePath = `${storageRoot}/${categoryByType[type]}/${productId}`;
   const objectPath = `${storagePath}/${fileName}`;
   const trailerPath = hasTrailer ? `public_file/product_trailers/${productId}.mp4` : null;
   const productRef = db.collection("products").doc(productId);
@@ -65,7 +67,7 @@ exports.createProductUpload = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("already-exists", "Product ID already exists.");
   }
   const productData = {
-    productId, name, type, description, price, currency: "eur", active: false,
+    productId, name, type, description, price, currency: "eur", accessMode, active: false,
     fileName, storageFileName: fileName, storagePath,
     createdBy: { uid: context.auth.uid, email: context.auth.token.email || null },
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -187,13 +189,19 @@ exports.updateProductDetails = functions.https.onCall(async (data, context) => {
   const name = String(data.name || "").trim();
   const description = String(data.description || "").trim();
   const price = String(data.price || "").trim().replace(",", ".");
-  if (!productId || !name || !description || !/^\d+(\.\d{1,2})?$/.test(price) || Number(price) <= 0) {
+  if (!productId || !name || !description || !/^\d+(\.\d{1,2})?$/.test(price)) {
     throw new functions.https.HttpsError("invalid-argument", "Product details are invalid.");
   }
 
   const productRef = db.collection("products").doc(productId);
   const product = await productRef.get();
   if (!product.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  const accessMode = product.get("accessMode") || "paid";
+  if ((accessMode === "free" && Number(price) !== 0) || (accessMode !== "free" && Number(price) <= 0)) {
+    throw new functions.https.HttpsError("invalid-argument", accessMode === "free"
+      ? "I prodotti gratuiti devono avere prezzo zero."
+      : "Il prezzo di un prodotto a pagamento deve essere maggiore di zero.");
+  }
 
   const editor = { uid: context.auth.uid, email: context.auth.token.email || null };
   await productRef.update({
@@ -219,6 +227,11 @@ exports.createProductRevisionUpload = functions.https.onCall(async (data, contex
   const product = productSnapshot.data();
   if (product.archivedAt || !product.storagePath || !product.storageFileName) {
     throw new functions.https.HttpsError("failed-precondition", "Restore the product before uploading a revision.");
+  }
+  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  const root = (product.accessMode || "paid") === "free" ? "public_file" : "protected_file";
+  if (!categoryByType[product.type] || product.storagePath !== `${root}/${categoryByType[product.type]}/${productId}` || /[\\/]/.test(product.storageFileName)) {
+    throw new functions.https.HttpsError("failed-precondition", "Product file path is invalid.");
   }
 
   const contentType = String(data.contentType || "application/octet-stream");
@@ -304,8 +317,9 @@ exports.createProductDownloadUrl = functions.https.onCall(async (data, context) 
   const product = productSnapshot.data();
   const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
   const category = categoryByType[product.type];
+  const root = (product.accessMode || "paid") === "free" ? "public_file" : "protected_file";
   if (!category || !product.storagePath || !product.storageFileName ||
-      ![`protected_file/${category}`, `protected_file/${category}/${productId}`].includes(product.storagePath) ||
+      ![`${root}/${category}`, `${root}/${category}/${productId}`].includes(product.storagePath) ||
       /[\\/]/.test(product.storageFileName)) {
     throw new functions.https.HttpsError("failed-precondition", "Product file path is missing.");
   }
@@ -369,7 +383,8 @@ exports.duplicateProduct = functions.https.onCall(async (data, context) => {
   const source = sourceSnapshot.data();
   const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
   const category = categoryByType[source.type];
-  if (!category || !["protected_file/" + category, `protected_file/${category}/${sourceId}`].includes(source.storagePath) ||
+  const root = (source.accessMode || "paid") === "free" ? "public_file" : "protected_file";
+  if (!category || ![`${root}/${category}`, `${root}/${category}/${sourceId}`].includes(source.storagePath) ||
       !source.storageFileName || /[\\/]/.test(source.storageFileName) || source.archivedAt) {
     throw new functions.https.HttpsError("failed-precondition", "This product cannot be duplicated.");
   }
@@ -382,7 +397,7 @@ exports.duplicateProduct = functions.https.onCall(async (data, context) => {
     .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 42) || "product";
   const productId = `${base}-copy-${crypto.randomUUID().slice(0, 8)}`;
   const name = `${String(source.name || sourceId).slice(0, 112)} (copia)`;
-  const storagePath = `protected_file/${category}/${productId}`;
+  const storagePath = `${root}/${category}/${productId}`;
   const destinationPath = `${storagePath}/${source.storageFileName}`;
   const productRef = db.collection("products").doc(productId);
   const offerRef = db.collection("offers").doc(`product_${productId}`);
@@ -432,15 +447,19 @@ exports.generateProductQr = functions.storage.object().onFinalize(async () => nu
 
 exports.generateProductQrEurope = functions.region("europe-west1").storage.object().onFinalize(async (object) => {
   const objectPath = object.name || "";
-  const match = objectPath.match(/^protected_file\/(eBook|audioBook|boxBook)\/([a-zA-Z0-9_-]{3,80})\/([^/]+)$/);
+  const match = objectPath.match(/^(protected_file|public_file)\/(eBook|audioBook|boxBook)\/([a-zA-Z0-9_-]{3,80})\/([^/]+)$/);
   if (!match) return null;
-  const [, category, productId, fileName] = match;
+  const [, root, category, productId, fileName] = match;
   const productRef = db.collection("products").doc(productId);
   const productSnapshot = await productRef.get();
   if (!productSnapshot.exists) return null;
   const product = productSnapshot.data();
   if (product.archivedAt) return null;
-  if (product.storagePath !== `protected_file/${category}/${productId}` || product.storageFileName !== fileName) return null;
+  const accessMode = product.accessMode || "paid";
+  const expectedRoot = accessMode === "free" ? "public_file" : "protected_file";
+  const priceCents = priceToMinorUnits(product.price);
+  if (root !== expectedRoot || product.storagePath !== `${root}/${category}/${productId}` || product.storageFileName !== fileName ||
+      (accessMode === "free" && priceCents !== 0) || (accessMode !== "free" && priceCents <= 0)) return null;
 
   const publicUrl = `https://asaratiqrc.web.app/p/${productId}`;
   const qrCodePath = `public_qrcodes/${productId}.svg`;
@@ -450,7 +469,7 @@ exports.generateProductQrEurope = functions.region("europe-west1").storage.objec
     metadata: { contentType: "image/svg+xml", cacheControl: "public, max-age=31536000, immutable" }
   });
   await db.collection("offers").doc(`product_${productId}`).update({ active: true });
-  await productRef.update({ publicUrl, qrCodePath, qrCodeGeneratedAt: admin.firestore.FieldValue.serverTimestamp(), active: true });
+  await productRef.update({ accessMode, publicUrl, qrCodePath, qrCodeGeneratedAt: admin.firestore.FieldValue.serverTimestamp(), active: true });
   return null;
 });
 
@@ -597,6 +616,9 @@ exports.createPayment = functions.https.onRequest( async (req, res) => {
   }
 
   const product = productSnapshot.data();
+  if ((product.accessMode || "paid") === "free" || String(product.storagePath || "").startsWith("public_file/")) {
+    return res.status(400).send("Il prodotto è gratuito: non è richiesto alcun pagamento");
+  }
   if (
     product.active !== undefined &&
     product.active !== true &&
@@ -1103,6 +1125,9 @@ exports.generateDownloadUrl = functions.https.onRequest(async (req, res) => {
     }
 
     const product = productDoc.data();
+    if ((product.accessMode || "paid") === "free" || String(product.storagePath || "").startsWith("public_file/")) {
+      return res.status(403).send("Free products must use the QR free-download flow");
+    }
 
     const storagePath = product.storagePath;
     const storageFileName = product.storageFileName;

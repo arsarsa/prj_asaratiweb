@@ -14,11 +14,12 @@
     body { max-width: 1120px; margin: 0 auto; padding: 28px 20px 60px; }
     h1 { font-size: clamp(1.55rem, 4vw, 2rem); margin: 0 0 10px; }
     h2 { font-size: 1.15rem; margin: 0 0 16px; }
-    button, input, textarea { font: inherit; }
+    button, input, textarea, select { font: inherit; }
     button { min-height: 42px; padding: 9px 15px; border: 1px solid #cbd3df; border-radius: 9px; background: #fff; color: #18212f; cursor: pointer; }
     button:hover { background: #f0f4f9; }
     button:disabled { opacity: .55; cursor: wait; }
     input[type="text"], input[type="number"], input[type="file"], textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #cbd3df; border-radius: 9px; background: #fff; }
+    select { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #cbd3df; border-radius: 9px; background: #fff; }
     input:focus, button:focus-visible { outline: 3px solid #bfd8ff; outline-offset: 2px; }
     .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
     .upload-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
@@ -82,6 +83,8 @@
   <input type="text" id="ebookName" placeholder="Titolo prodotto">
   <input type="text" id="ebookDescription" placeholder="Descrizione">
   <input type="file" id="ebookInput" accept=".epub, .pdf, .zip">
+  <label for="ebookAccessMode">Disponibilità</label>
+  <select id="ebookAccessMode"><option value="paid">Protetto — a pagamento</option><option value="free">Pubblico — gratuito dalla pagina QR</option></select>
   <label for="ebookTrailerInput">Trailer opzionale (.mp4)</label>
   <input type="file" id="ebookTrailerInput" accept="video/mp4,.mp4">
   <input type="number" id="ebookPrice" placeholder="Prezzo in EUR">
@@ -94,6 +97,8 @@
   <input type="text" id="audiobookName" placeholder="Titolo prodotto">
   <input type="text" id="audiobookDescription" placeholder="Descrizione">
   <input type="file" id="audiobookInput" accept=".mp3,.m4a,.m4b,.mp4,.zip,audio/*">
+  <label for="audiobookAccessMode">Disponibilità</label>
+  <select id="audiobookAccessMode"><option value="paid">Protetto — a pagamento</option><option value="free">Pubblico — gratuito dalla pagina QR</option></select>
   <label for="audiobookTrailerInput">Trailer opzionale (.mp4)</label>
   <input type="file" id="audiobookTrailerInput" accept="video/mp4,.mp4">
   <input type="number" id="audiobookPrice" placeholder="Prezzo in EUR">
@@ -106,6 +111,8 @@
   <input type="text" id="boxbookName" placeholder="Titolo prodotto">
   <input type="text" id="boxbookDescription" placeholder="Descrizione">
   <input type="file" id="fileZipInput" accept=".zip,.mp4">
+  <label for="boxbookAccessMode">Disponibilità</label>
+  <select id="boxbookAccessMode"><option value="paid">Protetto — a pagamento</option><option value="free">Pubblico — gratuito dalla pagina QR</option></select>
   <label for="boxbookTrailerInput">Trailer opzionale (.mp4)</label>
   <input type="file" id="boxbookTrailerInput" accept="video/mp4,.mp4">
   <input type="number" id="fileZipPrice" placeholder="Prezzo in EUR">
@@ -158,6 +165,6 @@
   </div>
 </div>
 
-  <script type="module" src="scripts/online_upload.js?v=20261015-2"></script>
+  <script type="module" src="scripts/online_upload.js?v=20261015-3"></script>
 </body>
 </html>
