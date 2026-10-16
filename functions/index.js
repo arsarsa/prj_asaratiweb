@@ -7,25 +7,42 @@ const Stripe = require("stripe");
 const QRCode = require("qrcode");
 const { Resend } = require("resend");
 
-const resend =
-  new Resend(
-    functions.config().resend.key
-  );
-
 admin.initializeApp({
   storageBucket: "asarati-9aafe.firebasestorage.app"
 });
 const db = admin.firestore();
 const bucket = admin.storage().bucket("asarati-9aafe.firebasestorage.app");
 
-const config = functions.config().stripe;
-const isTest = config.mode !== "live";
+let resendClient;
 
-// 🔥 selezione automatica
-const stripeSecret = isTest ? config.test_secret : config.live_secret;
-const webhookSecret = isTest ? config.test_webhook_secret : config.live_webhook_secret;
+function getRuntimeConfig() {
+  return functions.config?.() || {};
+}
 
-const stripe = Stripe(stripeSecret);
+function getStripeSettings() {
+  const config = getRuntimeConfig().stripe || {};
+  const isTest = config.mode !== "live";
+  return {
+    config,
+    isTest,
+    secret: isTest ? config.test_secret : config.live_secret,
+    webhookSecret: isTest ? config.test_webhook_secret : config.live_webhook_secret
+  };
+}
+
+function getStripeClient() {
+  const { secret } = getStripeSettings();
+  if (!secret) throw new Error("Stripe secret is not configured.");
+  return Stripe(secret);
+}
+
+function getResendClient() {
+  if (resendClient) return resendClient;
+  const apiKey = getRuntimeConfig().resend?.key;
+  if (!apiKey) throw new Error("Resend API key is not configured.");
+  resendClient = new Resend(apiKey);
+  return resendClient;
+}
 
 // Admin creates a private product draft and receives a one-object signed URL.
 // The client never receives Storage read access to paid files.
@@ -594,9 +611,6 @@ function priceToMinorUnits(value) {
     : null;
 }
 
-console.log("⚙️ Stripe MODE:", isTest ? "TEST" : "LIVE");
-console.log("🔑 Stripe KEY:", stripeSecret?.slice(-6));
-
 exports.createPayment = functions.https.onRequest( async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
@@ -750,17 +764,12 @@ exports.createPayment = functions.https.onRequest( async (req, res) => {
     }
   );
 
+  const { isTest } = getStripeSettings();
   console.log(
     "⚙️ MODE:",
     isTest
       ? "TEST"
       : "LIVE"
-  );
-
-  console.log(
-    "🔑 SECRET:",
-    stripeSecret
-      ?.slice(-6)
   );
 
   try {
@@ -880,20 +889,16 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
   console.log("🔥 WEBHOOK RICEVUTO");
 
   try {
+    const { isTest, webhookSecret } = getStripeSettings();
     const sig = req.headers["stripe-signature"];
     console.log("signature presente:", !!sig);
-
-    console.log(
-      "🪝 WEBHOOK SECRET:",
-      webhookSecret?.slice(-10)
-    );
 
     console.log(
       "🪝 SIGNATURE:",
       sig?.slice(0, 20)
     );
 
-    const event = stripe.webhooks.constructEvent(
+    const event = getStripeClient().webhooks.constructEvent(
       req.rawBody,
       sig,
       webhookSecret
@@ -1339,8 +1344,7 @@ return res.json({ url });
 exports.getStripeConfig = functions.https.onRequest((req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
-  const config = functions.config().stripe;
-  const isTest = config.mode !== "live";
+  const { config, isTest } = getStripeSettings();
   const publishableKey = isTest
     ? config.test_publishable
     : config.live_publishable;
@@ -1379,7 +1383,7 @@ async function createStripePayment({
 }) {
 
   const paymentIntent =
-    await stripe
+    await getStripeClient()
       .paymentIntents
       .create({
 
@@ -1471,7 +1475,7 @@ async function sendUserEmail({
   try {
 
     const result =
-      await resend.emails.send({
+      await getResendClient().emails.send({
 
         from:
           "asarati <noreply@mail.asarati.it>",
@@ -1643,7 +1647,7 @@ async function sendAdminEmail({
   try {
 
     const result =
-      await resend.emails.send({
+      await getResendClient().emails.send({
 
         from:
         "Asarati <noreply@mail.asarati.it>",
@@ -1724,7 +1728,7 @@ async function sendAdminDownloadEmail({
   source
 }) {
   try {
-    const result = await resend.emails.send({
+    const result = await getResendClient().emails.send({
       from: "Asarati <noreply@mail.asarati.it>",
       to: "asarati.it@gmail.com",
       subject: `⬇️ Download autorizzato: ${productName}`,
