@@ -372,6 +372,109 @@ exports.getProductsSummary = functions.https.onCall(async (data, context) => {
   return { summaries };
 });
 
+async function getDocumentsByIds(collectionName, ids) {
+  const documents = new Map();
+  const uniqueIds = [...new Set(ids.filter((id) => typeof id === "string" && id))];
+  for (let offset = 0; offset < uniqueIds.length; offset += 300) {
+    const refs = uniqueIds.slice(offset, offset + 300)
+      .map((id) => db.collection(collectionName).doc(id));
+    if (!refs.length) continue;
+    const snapshots = await db.getAll(...refs);
+    snapshots.forEach((snapshot) => {
+      if (snapshot.exists) documents.set(snapshot.id, snapshot.data());
+    });
+  }
+  return documents;
+}
+
+function timestampToIso(value) {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate().toISOString();
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+exports.getDownloadReport = functions.https.onCall(async (data, context) => {
+  if (!context.auth || context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError("permission-denied", "Admin access required.");
+  }
+
+  const pageSize = 100;
+  const cursor = data?.cursor;
+  let query = db.collection("downloads")
+    .orderBy("downloadedAt", "desc")
+    .limit(pageSize);
+
+  if (cursor) {
+    if (typeof cursor.id !== "string" || !/^[a-zA-Z0-9_-]{1,150}$/.test(cursor.id)) {
+      throw new functions.https.HttpsError("invalid-argument", "Download cursor is invalid.");
+    }
+    const cursorSnapshot = await db.collection("downloads").doc(cursor.id).get();
+    if (!cursorSnapshot.exists || !cursorSnapshot.get("downloadedAt")) {
+      throw new functions.https.HttpsError("failed-precondition", "Download list changed. Reload the report.");
+    }
+    query = query.startAfter(cursorSnapshot);
+  }
+
+  const downloadSnapshot = await query.get();
+  const rows = downloadSnapshot.docs.map((snapshot) => ({ id: snapshot.id, ...snapshot.data() }));
+  const paymentIds = rows.map((row) => row.paymentIntentId).filter(Boolean);
+  const customerEmails = rows.map((row) => String(row.email || "").toLowerCase()).filter(Boolean);
+  const productIds = rows.map((row) => row.productId).filter(Boolean);
+  const [payments, customers, products, subscribers] = await Promise.all([
+    getDocumentsByIds("payments", paymentIds),
+    getDocumentsByIds("customers", customerEmails),
+    getDocumentsByIds("products", productIds),
+    getDocumentsByIds("subscribers", customerEmails)
+  ]);
+
+  const items = rows.map((row) => {
+    const email = String(row.email || "").toLowerCase();
+    const payment = payments.get(row.paymentIntentId) || {};
+    const customer = customers.get(email) || {};
+    const product = products.get(row.productId) || {};
+    const subscriber = subscribers.get(email) || {};
+    return {
+      downloadId: row.id,
+      email: email || null,
+      productId: row.productId || null,
+      productName: product.name || row.productId || "Prodotto non disponibile",
+      productType: product.type || null,
+      accessMode: product.accessMode || (String(product.storagePath || "").startsWith("public_file/") ? "free" : "paid"),
+      source: row.source || payment.source || null,
+      offerId: row.offerId || payment.offerId || null,
+      downloadedAt: timestampToIso(row.downloadedAt),
+      paymentIntentId: row.paymentIntentId || null,
+      paymentStatus: payment.status || null,
+      amount: Number.isFinite(payment.amount) ? payment.amount : null,
+      currency: payment.currency || null,
+      purchasedAt: timestampToIso(payment.created || payment.createdAt),
+      fulfilled: payment.fulfilled === true,
+      newsletterConsent: typeof payment.newsletterConsent === "boolean" ? payment.newsletterConsent : null,
+      customer: email ? {
+        firstPurchaseAt: timestampToIso(customer.firstPurchaseAt),
+        lastPurchaseAt: timestampToIso(customer.lastPurchaseAt),
+        totalOrders: Number(customer.totalOrders || 0),
+        totalSpent: Number(customer.totalSpent || 0),
+        products: Array.isArray(customer.products) ? customer.products : [],
+        updatedAt: timestampToIso(customer.updatedAt),
+        subscribed: subscriber.subscribed === true,
+        subscriberSource: subscriber.source || null,
+        subscribedAt: timestampToIso(subscriber.createdAt),
+        subscriberUpdatedAt: timestampToIso(subscriber.updatedAt)
+      } : null
+    };
+  });
+
+  const last = downloadSnapshot.docs.at(-1);
+  const hasMore = downloadSnapshot.size === pageSize;
+  return {
+    items,
+    hasMore,
+    nextCursor: hasMore && last ? { id: last.id } : null
+  };
+});
+
 exports.duplicateProduct = functions.https.onCall(async (data, context) => {
   if (!context.auth || context.auth.token.admin !== true) {
     throw new functions.https.HttpsError("permission-denied", "Admin access required.");
@@ -671,6 +774,7 @@ exports.createPayment = functions.https.onRequest( async (req, res) => {
           return await
           createStripePayment({
             productId,
+            productName: product.name || productId,
             normalizedEmail,
             amount,
             currency,
@@ -1025,26 +1129,31 @@ if (
   // 3. EMAILS
 // ==========================
 
-try {
+const productSnapshot = productId
+  ? await db.collection("products").doc(productId).get()
+  : null;
+const productName = productSnapshot?.exists
+  ? productSnapshot.get("name") || productId
+  : productId || "Prodotto";
+const formattedAmount = new Intl.NumberFormat("it-IT", {
+  style: "currency",
+  currency: paymentIntent.currency.toUpperCase()
+}).format(paymentIntent.amount / 100);
 
-  await sendUserEmail({
-    email,
-    productId,
-    paymentIntentId:
-      paymentIntent.id,
-    newsletterConsent
-  });
-
-  console.log(
-    "📧 USER EMAIL OK"
-  );
-
-} catch (err) {
-
-  console.error(
-    "❌ USER EMAIL ERROR:",
-    err
-  );
+if (isTest) {
+  try {
+    await sendUserEmail({
+      email,
+      productId,
+      productName,
+      amount: formattedAmount,
+      paymentIntentId: paymentIntent.id,
+      newsletterConsent
+    });
+    console.log("📧 TEST CUSTOMER EMAIL OK");
+  } catch (err) {
+    console.error("❌ TEST CUSTOMER EMAIL ERROR:", err);
+  }
 }
 
 try {
@@ -1052,6 +1161,10 @@ try {
   await sendAdminEmail({
     email,
     productId,
+    productName,
+    amount: formattedAmount,
+    paymentIntentId: paymentIntent.id,
+    source,
     newsletterConsent
   });
 
@@ -1181,6 +1294,14 @@ if (!payment.downloaded) {
       admin.firestore.FieldValue.serverTimestamp()
   });
 
+  await sendAdminDownloadEmail({
+    email: payment.email,
+    productId,
+    productName: product.name || productId,
+    paymentIntentId,
+    source: payment.source || "web"
+  });
+
 } else {
 
   console.log(
@@ -1246,6 +1367,7 @@ exports.getStripeConfig = functions.https.onRequest((req, res) => {
 async function createStripePayment({
 
   productId,
+  productName,
   normalizedEmail,
   amount,
   newsletterConsent,
@@ -1262,6 +1384,8 @@ async function createStripePayment({
       .create({
 
         amount,
+
+        description: productName,
 
         currency,
 
@@ -1336,21 +1460,13 @@ async function createStripePayment({
 async function sendUserEmail({
   email,
   productId,
+  productName,
+  amount,
   paymentIntentId,
   newsletterConsent
 }) {
 
   if (!email) return;
-
-  const productNames = {
-    ebook01: "eBook",
-    audiobook01: "Audiobook",
-    boxbook01: "BoxBook"
-  };
-
-  const productName =
-    productNames[productId] ||
-    productId;
 
   try {
 
@@ -1375,7 +1491,7 @@ async function sendUserEmail({
         ">
 
           <h2>
-            Grazie per il tuo acquisto!
+            Conferma del tuo ordine
           </h2>
 
           <p>
@@ -1384,12 +1500,17 @@ async function sendUserEmail({
           </p>
 
           <p>
-            <strong>Hai scaricato:</strong>
+            <strong>Prodotto:</strong>
             ${productName}
           </p>
 
           <p>
-            Il download è già stato avviato.
+            <strong>Importo pagato:</strong>
+            ${amount}
+          </p>
+
+          <p>
+            Puoi scaricare il prodotto dalla pagina di conferma aperta dopo il pagamento.
           </p>
 
           <p>
@@ -1512,6 +1633,10 @@ async function sendUserEmail({
 async function sendAdminEmail({
   email,
   productId,
+  productName,
+  amount,
+  paymentIntentId,
+  source,
   newsletterConsent
 }) {
 
@@ -1527,7 +1652,7 @@ async function sendAdminEmail({
           "asarati.it@gmail.com",
 
         subject:
-          "💰 Nuovo acquisto su asarati.it!",
+          `💰 Nuovo acquisto: ${productName}`,
 
         html: `
           <div style="
@@ -1546,7 +1671,22 @@ async function sendAdminEmail({
 
             <p>
               <strong>Prodotto:</strong>
-              ${productId}
+              ${productName} (${productId})
+            </p>
+
+            <p>
+              <strong>Importo:</strong>
+              ${amount}
+            </p>
+
+            <p>
+              <strong>Origine:</strong>
+              ${source}
+            </p>
+
+            <p>
+              <strong>ID pagamento Stripe:</strong>
+              ${paymentIntentId}
             </p>
 
             <p>
@@ -1573,5 +1713,34 @@ async function sendAdminEmail({
         "❌ sendAdminEmail FULL ERROR:",
         err
       );
+  }
+}
+
+async function sendAdminDownloadEmail({
+  email,
+  productId,
+  productName,
+  paymentIntentId,
+  source
+}) {
+  try {
+    const result = await resend.emails.send({
+      from: "Asarati <noreply@mail.asarati.it>",
+      to: "asarati.it@gmail.com",
+      subject: `⬇️ Download autorizzato: ${productName}`,
+      html: `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:24px">
+          <h2>È stato richiesto il download di un prodotto protetto</h2>
+          <p><strong>Cliente:</strong> ${email || "Email non disponibile"}</p>
+          <p><strong>Prodotto:</strong> ${productName} (${productId})</p>
+          <p><strong>Origine:</strong> ${source}</p>
+          <p><strong>ID pagamento Stripe:</strong> ${paymentIntentId}</p>
+          <p>Il link di download è stato generato. Questo avviso conferma l'autorizzazione del link, non il completamento del trasferimento sul dispositivo.</p>
+        </div>
+      `
+    });
+    console.log("📨 ADMIN DOWNLOAD EMAIL RESULT:", JSON.stringify(result, null, 2));
+  } catch (err) {
+    console.error("❌ sendAdminDownloadEmail ERROR:", err);
   }
 }

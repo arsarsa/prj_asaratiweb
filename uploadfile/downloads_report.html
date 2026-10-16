@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Utenti e download | Backend Asarati</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #18212f; background: #f5f7fa; }
+    * { box-sizing: border-box; }
+    body { max-width: 1240px; margin: 0 auto; padding: 28px 20px 60px; }
+    button, input, select { font: inherit; }
+    button, .button-link { min-height: 42px; padding: 9px 15px; border: 1px solid #cbd3df; border-radius: 9px; background: #fff; color: #18212f; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    button:hover, .button-link:hover { background: #f0f4f9; }
+    button:disabled { opacity: .55; cursor: wait; }
+    input, select { min-height: 44px; padding: 9px 11px; border: 1px solid #cbd3df; border-radius: 9px; background: #fff; color: inherit; width: 100%; }
+    input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #bfd8ff; outline-offset: 2px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
+    h1 { font-size: clamp(1.5rem, 4vw, 2rem); margin: 0 0 6px; }
+    h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    .muted { color: #586578; margin: 0; }
+    .card { background: #fff; border: 1px solid #e1e6ee; border-radius: 14px; padding: 18px; margin-bottom: 16px; box-shadow: 0 3px 12px rgb(20 36 60 / 4%); }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .stat { border: 1px solid #e7ebf1; border-radius: 11px; padding: 14px; min-width: 0; }
+    .stat span { display: block; color: #64748b; font-size: .85rem; }
+    .stat strong { display: block; margin-top: 5px; font-size: 1.2rem; overflow-wrap: anywhere; }
+    .filters { display: grid; grid-template-columns: minmax(210px, 2fr) repeat(3, minmax(140px, 1fr)); gap: 10px; align-items: end; }
+    .filters label { display: grid; gap: 5px; color: #465366; font-size: .88rem; }
+    .filters-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .primary { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+    .primary:hover { background: #1e40af; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 1020px; }
+    th, td { text-align: left; vertical-align: top; padding: 10px 9px; border-bottom: 1px solid #e7ebf1; }
+    th { color: #526074; font-size: .84rem; white-space: nowrap; }
+    td { font-size: .9rem; }
+    tbody tr:nth-child(odd) { background: #f0f3f8; }
+    tbody tr:nth-child(even) { background: #fff; }
+    tbody tr:hover { background: #e4ebf5; }
+    th.row-number, td.row-number { width: 62px; text-align: right; color: #64748b; font-variant-numeric: tabular-nums; }
+    td.email { min-width: 190px; overflow-wrap: anywhere; }
+    details summary { cursor: pointer; color: #1d4ed8; }
+    .details-body { padding: 8px 0 0; min-width: 245px; }
+    .details-body p { margin: 4px 0; }
+    .status { padding: 10px 0; color: #586578; }
+    .error { color: #a52222; }
+    .notice { font-size: .87rem; color: #64748b; margin: 10px 0 0; }
+    .pagination { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 14px; border-radius: 10px; background: #263244; color: #fff; }
+    .pagination button { min-width: 44px; min-height: 40px; padding: 7px 12px; }
+    .pagination button:disabled { cursor: not-allowed; }
+    .pagination-info { min-width: 150px; text-align: center; font-variant-numeric: tabular-nums; }
+    @media (max-width: 760px) { body { padding: 18px 13px 36px; } .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .filters { grid-template-columns: 1fr 1fr; } .filters label:first-child { grid-column: 1 / -1; } .page-header { align-items: flex-start; } }
+    @media (max-width: 430px) { .filters { grid-template-columns: 1fr; } .filters label:first-child { grid-column: auto; } .card { padding: 14px; } }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div>
+      <h1>Utenti e download</h1>
+      <p class="muted">Riepilogo dei download registrati, con i dati collegati a ordini e clienti.</p>
+    </div>
+    <nav aria-label="Navigazione backend" style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="button-link" href="/uploadfile/index_upload.html">← Home Backend</a>
+      <a class="button-link" href="/uploadfile/online_upload.html">Inserimento prodotti</a>
+    </nav>
+  </header>
+
+  <p id="pageStatus" class="status" role="status">Verifica accesso…</p>
+
+  <main id="report" hidden>
+    <section class="card" aria-label="Riepilogo">
+      <div class="stats">
+        <div class="stat"><span>Download mostrati</span><strong id="statDownloads">0</strong></div>
+        <div class="stat"><span>Clienti identificati</span><strong id="statCustomers">0</strong></div>
+        <div class="stat"><span>Ordini pagati</span><strong id="statOrders">0</strong></div>
+        <div class="stat"><span>Incasso lordo associato</span><strong id="statRevenue">0 €</strong></div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="filterTitle">
+      <h2 id="filterTitle">Filtra i download</h2>
+      <div class="filters">
+        <label>Email, prodotto o ID ordine<input id="searchFilter" type="search" autocomplete="off" placeholder="Cerca nei risultati caricati"></label>
+        <label>Prodotto<select id="productFilter"><option value="">Tutti i prodotti</option></select></label>
+        <label>Dal<input id="dateFrom" type="date"></label>
+        <label>Al<input id="dateTo" type="date"></label>
+      </div>
+      <div class="filters-actions">
+        <button id="clearFilters" type="button">Azzera filtri</button>
+        <button id="exportCsv" type="button">Esporta CSV</button>
+      </div>
+      <p id="pageInfo" class="notice">Caricamento…</p>
+    </section>
+
+    <section class="card" aria-label="Elenco download">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="row-number">N.</th><th>Scaricato il</th><th>Email cliente</th><th>Prodotto</th><th>Acquisto</th><th>Importo</th><th>Newsletter</th><th>Origine</th><th>Dettagli</th></tr></thead>
+          <tbody id="downloadRows"></tbody>
+        </table>
+      </div>
+      <p id="emptyState" class="status" hidden>Nessun download corrisponde ai filtri selezionati.</p>
+      <nav class="pagination" aria-label="Paginazione download">
+        <button id="firstPage" type="button" aria-label="Prima pagina">&lt;&lt;</button>
+        <button id="previousPage" type="button" aria-label="Pagina precedente">&lt;</button>
+        <span id="paginationInfo" class="pagination-info" aria-live="polite">Pagina 1 / 1</span>
+        <button id="nextPage" type="button" aria-label="Pagina successiva">&gt;</button>
+        <button id="lastPage" type="button" aria-label="Ultima pagina">&gt;&gt;</button>
+      </nav>
+    </section>
+  </main>
+
+  <script type="module" src="/uploadfile/scripts/downloads_report.js"></script>
+</body>
+</html>

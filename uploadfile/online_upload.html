@@ -42,7 +42,8 @@
     .summary-table td:first-child { white-space: normal; min-width: 180px; }
     .summary-table a { color: #1d4ed8; text-decoration: underline; text-underline-offset: 3px; }
     .summary-table a:hover { color: #1e40af; }
-    .total-downloads { margin: 0 0 14px; color: #273448; font-weight: 600; }
+    .total-downloads, .today-qr-views { margin: 0 0 8px; color: #273448; font-weight: 600; }
+    .daily-views-detail { color: #64748b; font-size: .78rem; }
     .upload-title { display: grid; justify-items: start; gap: 3px; }
     .upload-extensions { font-size: .68em; font-weight: 400; white-space: nowrap; color: #64748b; }
     .product-card h3 { margin: 0 0 8px; font-size: 1.08rem; }
@@ -66,13 +67,17 @@
 <body>
   <header class="page-header">
     <div><h1><span class="highlight-online">Online Backend</span></h1><p>Gestisci prodotti, revisioni e QR code.</p></div>
-    <button onclick="window.location.href='index_upload.html'">← Ritorna al pannello</button>
+    <nav aria-label="Navigazione backend" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="window.location.href='index_upload.html'">← Ritorna al pannello</button>
+      <a class="button-link" href="/uploadfile/downloads_report.html">Utenti e download</a>
+    </nav>
   </header>
 
   <section class="summary-card" aria-labelledby="summaryTitle">
     <h2 id="summaryTitle">Riepilogo prodotti e vendite</h2>
-    <p class="product-message">Le visualizzazioni partono da questa versione. I download conteggiati sono quelli dei clienti dopo un acquisto; prove e download dal pannello sono esclusi. Gli iscritti newsletter sono gli abbonati attivi che hanno dato il consenso acquistando quel prodotto.</p>
+    <p class="product-message">Le visualizzazioni partono da questa versione. Le visite di oggi usano il fuso orario italiano. I download conteggiati sono quelli dei clienti dopo un acquisto; prove e download dal pannello sono esclusi. Gli iscritti newsletter sono gli abbonati attivi che hanno dato il consenso acquistando quel prodotto.</p>
     <p id="totalDownloads" class="total-downloads" aria-live="polite">Download totali: …</p>
+    <p id="todayQrViews" class="today-qr-views" aria-live="polite">Visite QR oggi: …</p>
     <div id="productSummary" class="summary-scroll" aria-live="polite">Caricamento riepilogo…</div>
   </section>
 

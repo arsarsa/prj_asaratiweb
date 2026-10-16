@@ -242,6 +242,18 @@ function refreshProducts() {
   void displayUploadedProducts("audiobook", "audioList");
   void displayUploadedProducts("boxbook", "boxList");
   void renderProductSummary();
+  void renderTotalQrViewsToday();
+}
+
+function getRomeDateKey() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Rome",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+  const part = (type) => parts.find((item) => item.type === type)?.value || "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 async function renderProductSummary() {
@@ -303,9 +315,17 @@ async function renderProductSummary() {
         String(summary.sales ?? 0),
         formatCents(summary.revenueCents ?? 0)
       ];
-      values.forEach((value) => {
+      values.forEach((value, index) => {
         const cell = document.createElement("td");
-        cell.textContent = value;
+        if (index === 1) {
+          cell.textContent = value;
+          const dailyViews = document.createElement("small");
+          dailyViews.className = "daily-views-detail";
+          dailyViews.textContent = `oggi ${product.counters?.viewsDate === getRomeDateKey() ? Number(product.counters?.viewsToday || 0) : 0}`;
+          cell.append(document.createElement("br"), dailyViews);
+        } else {
+          cell.textContent = value;
+        }
         row.append(cell);
       });
       body.append(row);
@@ -326,6 +346,25 @@ async function renderTotalDownloads() {
   } catch (error) {
     console.error("Unable to load total downloads:", error);
     total.textContent = "Download totali: non disponibili";
+  }
+}
+
+async function renderTotalQrViewsToday() {
+  const total = document.getElementById("todayQrViews");
+  if (!total) return;
+  try {
+    const snapshot = await getDocs(collection(db, "products"));
+    const today = getRomeDateKey();
+    const count = snapshot.docs.reduce((sum, productSnapshot) => {
+      const product = productSnapshot.data();
+      if (!["ebook", "audiobook", "boxbook"].includes(product.type)) return sum;
+      if (product.counters?.viewsDate !== today) return sum;
+      return sum + Number(product.counters?.viewsToday || 0);
+    }, 0);
+    total.textContent = `Visite QR oggi: ${new Intl.NumberFormat("it-IT").format(count)}`;
+  } catch (error) {
+    console.error("Unable to load today's QR views:", error);
+    total.textContent = "Visite QR oggi: non disponibili";
   }
 }
 
@@ -572,3 +611,4 @@ document.getElementById("showArchivedCheckbox").addEventListener("change", refre
 
 refreshProducts();
 void renderTotalDownloads();
+void renderTotalQrViewsToday();
