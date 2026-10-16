@@ -48,6 +48,12 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: npm install --global firebase-tools@15.34.0
 
+      - name: Configure Functions artifact cleanup
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          firebase functions:artifacts:setpolicy --force --location us-central1
+          firebase functions:artifacts:setpolicy --force --location europe-west1
+
       - name: Deploy Hosting and Functions
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: firebase deploy --non-interactive --only functions,hosting --project asarati-9aafe
