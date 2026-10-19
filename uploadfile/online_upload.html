@@ -65,6 +65,40 @@
     #ebookMessage, #audiobookMessage, #fileZipMessage { color: #465366; }
     .product-meta div { overflow-wrap: anywhere; }
     @media (max-width: 760px) { body { padding: 18px 14px 40px; } .upload-grid { grid-template-columns: 1fr; } .page-header { align-items: flex-start; flex-direction: column; } .product-meta { grid-template-columns: 1fr; } .product-actions button { flex: 1 1 140px; } }
+
+    body { font-size: 14px; }
+    button, .button-link { min-height: 36px; padding: 7px 11px; font-size: .82rem; }
+    .upload-card { padding: 16px; gap: 9px; }
+    .upload-card input, .upload-card select { min-height: 38px; padding: 8px 10px; font-size: .85rem; }
+    .upload-card p { font-size: .8rem; line-height: 1.45; }
+    .product-card { display: grid; grid-template-columns: 112px minmax(0, 1fr) minmax(0, 1fr); gap: 10px 22px; align-items: start; padding: 18px; }
+    .product-cover { grid-column: 1; grid-row: 1 / span 5; }
+    .cover-button { border: 0; padding: 0; background: transparent; cursor: zoom-in; width: 100%; }
+    .cover-button img { display: block; width: 100%; height: 160px; object-fit: contain; }
+    .cover-placeholder { padding: 35px 8px; border: 1px dashed #cbd3df; color: #64748b; text-align: center; font-size: .8rem; }
+    .product-main { grid-column: 2; }
+    .product-card h3 { font-size: 1rem; overflow-wrap: anywhere; }
+    .product-meta { display: grid; grid-template-columns: 1fr; gap: 7px; font-size: .82rem; }
+    .product-secondary { grid-column: 3; }
+    .product-card > .product-message, .product-card > details, .product-card > .product-actions { grid-column: 2 / -1; }
+    .product-actions { gap: 7px; margin-top: 5px; }
+    .action-with-help { display: inline-flex; align-items: stretch; }
+    .action-with-help > :first-child { border-radius: 7px 0 0 7px; }
+    .action-help { border-radius: 0 7px 7px 0; border-left: 0; padding: 5px 8px; color: #64748b; font-weight: 700; }
+    .info-dialog { width: min(460px, calc(100% - 32px)); border: 1px solid #e1e6ee; border-radius: 14px; padding: 22px; color: #18212f; box-shadow: 0 20px 60px #0003; }
+    .info-dialog::backdrop { background: rgb(15 23 42 / 55%); }
+    .info-dialog p { line-height: 1.6; }
+    #coverDialog { width: fit-content; max-width: calc(100% - 32px); padding: 12px; }
+    #coverDialog img { display: block; max-width: 85vw; max-height: 78vh; object-fit: contain; cursor: zoom-out; }
+    @media (max-width: 760px) {
+      .product-card { grid-template-columns: 80px minmax(0, 1fr); gap: 12px; }
+      .product-cover { grid-row: 1 / span 2; }
+      .cover-button img { height: 120px; }
+      .product-secondary { grid-column: 2; }
+      .product-card > .product-message, .product-card > details, .product-card > .product-actions { grid-column: 1 / -1; }
+      .product-actions button { flex: initial; }
+    }
+
 </style>
 </head>
 <body>
@@ -181,6 +215,14 @@
   </div>
 </div>
 
+<dialog id="actionHelpDialog" class="info-dialog" aria-labelledby="actionHelpTitle">
+  <h2 id="actionHelpTitle"></h2><p id="actionHelpText"></p>
+  <form method="dialog"><button>Chiudi</button></form>
+</dialog>
+<dialog id="coverDialog" class="info-dialog" aria-label="Copertina ingrandita">
+  <form method="dialog" style="text-align:right;margin-bottom:8px"><button>Chiudi / riduci</button></form>
+  <img id="enlargedCover" alt="">
+</dialog>
 <!-- Accesso amministratore richiesto -->
 <div id="loginModal" class="admin-modal" role="dialog" aria-modal="true">
   <div class="modal-card">
@@ -190,6 +232,6 @@
   </div>
 </div>
 
-  <script type="module" src="scripts/online_upload.js?v=20261019-cover-duration-3"></script>
+  <script type="module" src="scripts/online_upload.js?v=20261019-interface"></script>
 </body>
 </html>

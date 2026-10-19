@@ -162,14 +162,30 @@ async function displayUploadedProducts(type, containerId) {
       const row = document.createElement("article");
       row.className = "product-card";
       row.id = `product-${id}`;
+      const coverColumn = document.createElement("div");
+      coverColumn.className = "product-cover";
       if (product.coverImage) {
         const cover = document.createElement("img");
         cover.src = product.coverImage;
         cover.alt = `Copertina di ${product.name || id}`;
         cover.loading = "lazy";
-        cover.style.cssText = "display:block;width:110px;height:160px;object-fit:contain;margin-bottom:12px";
-        row.append(cover);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "cover-button";
+        button.setAttribute("aria-label", `Ingrandisci copertina di ${product.name || id}`);
+        button.addEventListener("click", () => {
+          const image = document.getElementById("enlargedCover");
+          image.src = cover.src;
+          image.alt = cover.alt;
+          document.getElementById("coverDialog").showModal();
+        });
+        button.append(cover);
+        coverColumn.append(button);
+      } else {
+        coverColumn.classList.add("cover-placeholder");
+        coverColumn.textContent = "Copertina non disponibile";
       }
+      row.append(coverColumn);
       const qrReady = Boolean(product.qrCodeGeneratedAt && product.qrCodePath);
       const title = document.createElement("h3");
       title.textContent = product.name || id;
@@ -177,6 +193,11 @@ async function displayUploadedProducts(type, containerId) {
       const status = archived ? "Archiviato" : isActive ? "Attivo" : qrReady ? "In attesa di attivazione" : "In elaborazione QR";
       const meta = document.createElement("div");
       meta.className = "product-meta";
+      const mainColumn = document.createElement("div");
+      mainColumn.className = "product-main";
+      const secondary = document.createElement("div");
+      secondary.className = "product-meta product-secondary";
+      const secondaryLabels = new Set(["Stato", "Caricato il", "Caricato da", "ID autore", "Ultima revisione", "Modificato da", "Vendite pagate", "Incasso lordo", "Download registrati"]);
       const createdBy = product.createdBy || {};
       const updatedBy = product.updatedBy || {};
       const summary = summaries[id] || {};
@@ -198,7 +219,7 @@ async function displayUploadedProducts(type, containerId) {
         const strong = document.createElement("strong");
         strong.textContent = `${label}: `;
         item.append(strong, document.createTextNode(value));
-        meta.append(item);
+        (secondaryLabels.has(label) ? secondary : meta).append(item);
       }
       const description = document.createElement("p");
       description.className = "product-message";
@@ -228,7 +249,7 @@ async function displayUploadedProducts(type, containerId) {
           preview.rel = "noopener";
           preview.textContent = "Apri pagina prodotto";
           preview.className = "button-link";
-          actions.append(preview);
+          actions.append(withActionHelp(preview, "Apri pagina prodotto"));
         }
       }
       actions.append(actionButton("Modifica", () => openEditProduct(id, product)));
@@ -239,7 +260,8 @@ async function displayUploadedProducts(type, containerId) {
       } else {
         actions.append(actionButton("Ripristina", () => restoreArchivedProduct(id)));
       }
-      row.append(title, meta, description);
+      mainColumn.append(title, meta);
+      row.append(mainColumn, secondary, description);
       if (type === "audiobook" && product.audiobookPackage?.tracks?.length) {
         const details = document.createElement("details");
         const summary = document.createElement("summary");
@@ -252,6 +274,9 @@ async function displayUploadedProducts(type, containerId) {
         }
         details.append(summary, list);
         row.append(details);
+      }
+      for (const button of [...actions.children]) {
+        if (button.dataset.helpLabel) { const marker = document.createTextNode(""); button.before(marker); marker.replaceWith(withActionHelp(button, button.dataset.helpLabel)); }
       }
       row.append(actions);
       container.append(row);
@@ -313,6 +338,7 @@ function actionButton(label, handler, extraClass = "") {
   button.textContent = label;
   if (extraClass) button.className = extraClass;
   button.addEventListener("click", handler);
+  button.dataset.helpLabel = label;
   return button;
 }
 
@@ -790,3 +816,46 @@ document.getElementById("showArchivedCheckbox").addEventListener("change", refre
 refreshProducts();
 void renderTotalDownloads();
 void renderTotalQrViewsToday();
+
+const actionDescriptions = {
+  "Estrai copertina e durate": "Legge cover.jpg e la durata delle tracce nello ZIP. Aggiorna la copertina e i dati del prodotto senza modificare il file originale.",
+  "Genera anteprima": "Crea una bozza privata di 120 secondi dall’inizio del capitolo 001, con sfumatura finale di 5 secondi. Potrai ascoltarla prima di pubblicarla.",
+  "Rigenera anteprima": "Sostituisce la bozza privata con un nuovo estratto di 120 secondi e sfumatura di 5 secondi. L’anteprima già pubblicata resta visibile finché non pubblichi la nuova bozza.",
+  "Ascolta / pubblica anteprima": "Apre la bozza privata con la forma d’onda. Ascoltala e premi Pubblica anteprima sul QRC per mostrarla ai visitatori.",
+  "Ritira anteprima": "Nasconde il campione audio dalla scheda pubblica. La bozza privata rimane disponibile nel backend.",
+  "Carica trailer": "Seleziona un video MP4 opzionale da mostrare nella scheda pubblica del prodotto, anche per gli audiobook.",
+  "Sostituisci trailer": "Carica un nuovo video MP4 al posto del trailer attuale.",
+  "Anteprima trailer": "Riproduce il trailer caricato per questo prodotto.",
+  "Scarica file originale": "Scarica il pacchetto originale caricato, per verificarne il contenuto. Non è un download cliente.",
+  "Scarica QR SVG": "Scarica il QR in formato vettoriale SVG, adatto anche alla stampa. Il QR apre la pagina stabile del prodotto.",
+  "Apri pagina prodotto": "Apre in una nuova scheda la pagina pubblica che vedrà chi scansiona il QR.",
+  "Modifica": "Modifica titolo, descrizione e prezzo del prodotto.",
+  "Duplica": "Crea una copia del prodotto da configurare separatamente, con un nuovo identificativo e QR.",
+  "Carica revisione": "Sostituisce il file scaricabile con una nuova versione, mantenendo lo stesso prodotto e il suo QR.",
+  "Cancella": "Archivia il prodotto e lo ritira dalla vendita. Puoi ritrovarlo con Mostra anche gli archiviati e ripristinarlo.",
+  "Ripristina": "Ripristina un prodotto archiviato."
+};
+function withActionHelp(control, label) {
+  const text = actionDescriptions[label];
+  if (!text) return control;
+  control.title = text;
+  const wrapper = document.createElement("span");
+  wrapper.className = "action-with-help";
+  const help = document.createElement("button");
+  help.type = "button";
+  help.className = "action-help";
+  help.textContent = "?";
+  help.setAttribute("aria-label", `Aiuto: ${label}`);
+  help.addEventListener("click", () => {
+    document.getElementById("actionHelpTitle").textContent = label;
+    document.getElementById("actionHelpText").textContent = text;
+    document.getElementById("actionHelpDialog").showModal();
+  });
+  wrapper.append(control, help);
+  return wrapper;
+}
+for (const id of ["coverDialog", "actionHelpDialog"]) {
+  const dialog = document.getElementById(id);
+  dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+}
+document.getElementById("enlargedCover").addEventListener("click", () => document.getElementById("coverDialog").close());
