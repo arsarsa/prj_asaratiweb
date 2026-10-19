@@ -165,9 +165,8 @@ async function displayUploadedProducts(type, containerId) {
         ["Disponibilità", product.accessMode === "free" ? "Pubblico / gratuito" : "Protetto / pagamento"],
         ["Caricato il", formatDate(product.createdAt)], ["Caricato da", createdBy.email || "Non registrato"],
         ["ID autore", createdBy.uid || "Non registrato"], ["ID prodotto", id],
-        [type === "audiobook" ? "Anteprima audio" : "Trailer", type === "audiobook"
-          ? (product.audioPreviewPublished ? "Pubblicata" : product.audioPreviewDraft ? "Bozza privata" : "Da generare")
-          : (product.trailerPath ? "Personalizzato" : "Non presente")],
+        ["Trailer", product.trailerPath ? "Personalizzato" : "Non presente"],
+        ...(type === "audiobook" ? [["Anteprima audio", product.audioPreviewPublished ? "Pubblicata" : product.audioPreviewDraft ? "Bozza privata" : "Da generare"]] : []),
         ["Ultima revisione", formatDate(product.revisedAt)], ["Modificato da", updatedBy.email || "—"],
         ["Vendite pagate", String(summary.sales ?? "—")],
         ["Incasso lordo", summary.revenueCents === undefined ? "—" : formatCents(summary.revenueCents)],
@@ -194,10 +193,9 @@ async function displayUploadedProducts(type, containerId) {
         actions.append(generate);
         if (product.audioPreviewDraft) actions.append(actionButton("Ascolta / pubblica anteprima", () => openAudioPreview(id)));
         if (product.audioPreviewPublished) actions.append(actionButton("Ritira anteprima", (event) => updateAudioPublication(id, false, event.currentTarget)));
-      } else {
-        if (product.trailerPath) actions.append(actionButton("Anteprima trailer", () => openTrailerPreview(id)));
-        actions.append(actionButton(product.trailerPath ? "Sostituisci trailer" : "Carica trailer", () => chooseProductTrailer(id)));
       }
+      if (product.trailerPath) actions.append(actionButton("Anteprima trailer", () => openTrailerPreview(id)));
+      actions.append(actionButton(product.trailerPath ? "Sostituisci trailer" : "Carica trailer", () => chooseProductTrailer(id)));
       actions.append(actionButton("Scarica file originale", () => downloadOriginal(id)));
       if (qrReady) {
         actions.append(actionButton("Scarica QR SVG", () => downloadQr(product.qrCodePath, id)));
@@ -710,7 +708,7 @@ function bind(button, folder, type) {
 }
 
 bind("uploadEbookButton", { file: "ebookInput", trailer: "ebookTrailerInput", access: "ebookAccessMode", name: "ebookName", description: "ebookDescription", price: "ebookPrice", message: "ebookMessage", result: "ebookFileId" }, "ebook");
-bind("uploadaudiobookButton", { file: "audiobookInput", trailer: null, access: "audiobookAccessMode", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
+bind("uploadaudiobookButton", { file: "audiobookInput", trailer: "audiobookTrailerInput", access: "audiobookAccessMode", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
 bind("uploadfileZipButton", { file: "fileZipInput", trailer: "boxbookTrailerInput", access: "boxbookAccessMode", name: "boxbookName", description: "boxbookDescription", price: "fileZipPrice", message: "fileZipMessage", result: "boxbookFileId" }, "boxbook");
 
 for (const [accessId, priceId] of [["ebookAccessMode", "ebookPrice"], ["audiobookAccessMode", "audiobookPrice"], ["boxbookAccessMode", "fileZipPrice"]]) {

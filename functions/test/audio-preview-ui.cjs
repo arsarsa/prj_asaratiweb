@@ -52,6 +52,8 @@ const assert = require("node:assert/strict");
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/uploadfile/online_upload.html`);
     await page.getByRole("button", { name: "Mostra prodotti caricati" }).click();
+    assert.equal(await page.locator("#audiobookTrailerInput").isVisible(), true);
+    assert.equal(await page.getByRole("button", { name: "Carica trailer", exact: true }).count(), 1);
     await page.getByRole("button", { name: "Genera anteprima", exact: true }).click();
     await page.getByRole("dialog", { name: "Anteprima audio" }).waitFor({ state: "visible" });
     await page.getByRole("button", { name: "Pubblica anteprima sul QRC" }).waitFor({ state: "visible" });

@@ -19,6 +19,9 @@ originale già caricato. Non richiede un secondo upload e non modifica lo ZIP.
   rifiutati. Metadati macOS e file non audio non vengono usati.
 - Un singolo file MP3/WAV/M4A/M4B/MP4 è trattato come una traccia unica.
 
+Il trailer video MP4 è facoltativo anche per gli audiobook: può essere caricato
+e gestito insieme all’anteprima audio. Il QRC mostra entrambi quando disponibili.
+
 ## Uso del pannello
 
 1. Caricare il prodotto: per gli audiobook la generazione è selezionata di default.
