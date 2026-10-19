@@ -1,20 +1,95 @@
-<!-- uploadfile/index_upload.html -->
-<!-- Backend -->
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>asarati.it | Backend Upload</title>
+  <title>asarati.it | Sistema di archiviazione</title>
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #18212f; background: #f5f7fa; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    h1 { font-size: clamp(1.65rem, 4vw, 2rem); line-height: 1.2; margin: 0 0 12px; letter-spacing: -.025em; }
+    h2 { font-size: 1.15rem; margin: 0 0 10px; }
+    p { line-height: 1.6; }
+    a { color: #1d4ed8; text-underline-offset: 3px; }
+    a:hover { color: #1e40af; }
+    button, input { font: inherit; }
+    button { min-height: 44px; padding: 11px 16px; border: 1px solid #cbd3df; border-radius: 9px; background: #fff; color: #18212f; cursor: pointer; font-weight: 600; }
+    button:hover { background: #f0f4f9; }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #bfd8ff; outline-offset: 3px; }
+    .primary-button { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+    .primary-button:hover { background: #1e40af; }
+    .card { background: #fff; border: 1px solid #e1e6ee; border-radius: 14px; box-shadow: 0 3px 12px rgb(20 36 60 / 4%); }
+    .eyebrow { color: #1d4ed8; font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 16px; }
+    .muted { color: #586578; }
+    .page-header { margin-bottom: 26px; }
+    .page-header p { margin: 0; }
+    .brand { font-size: 1.1rem; font-weight: 700; letter-spacing: -.025em; color: #273448; }
+    .brand span { color: #1d4ed8; }
+    .footer { color: #64748b; font-size: .85rem; margin: 24px 0 0; }
+
+    .panel-shell { max-width: 1120px; margin: 0 auto; padding: 28px 20px 48px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 32px; }
+    .topbar .brand { margin: 0; }
+    h1 { color: #1d4ed8; }
+    .session { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 16px 20px; margin: 24px 0; font-size: .9rem; }
+    .session-label { color: #586578; }
+    #user-email { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+    .destination-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .destination { display: flex; flex-direction: column; align-items: flex-start; padding: 24px; }
+    .destination .eyebrow { margin-bottom: 14px; }
+    .destination p.muted { margin: 0 0 24px; }
+    .destination button { margin-top: auto; width: 100%; }
+    .destination-primary { border-color: #c3d4f8; }
+    .local-section { margin-top: 28px; padding: 24px; }
+    .local-section p { margin: 0 0 18px; }
+    .local-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    @media (max-width: 760px) { .panel-shell { padding: 20px 16px 32px; } .destination-grid { grid-template-columns: 1fr; } .destination { padding: 20px; } .local-actions button { flex: 1 1 180px; } .topbar { margin-bottom: 26px; } }
+  </style>
 </head>
 <body>
-  <h1>Index | Seleziona il Sistema di Archiviazione</h1>
-  <p>Seleziona se operare con Emulatore, Online o Animate.</p>
-
-  <p><strong>Utente:</strong> <span id="user-email">Verifica in corso...</span></p>
-
+  <main class="panel-shell">
+    <div class="topbar">
+      <p class="brand">asarati<span>.it</span></p>
+      <button id="logoutButton" type="button">Esci</button>
+    </div>
+    <header class="page-header">
+      <p class="eyebrow">Area di gestione</p>
+      <h1>Seleziona il sistema di archiviazione</h1>
+      <p class="muted">Scegli dove lavorare sui tuoi contenuti editoriali.</p>
+    </header>
+    <div class="card session"><span class="session-label">Utente connesso</span><span id="user-email">Verifica in corso…</span></div>
+    <section class="destination-grid" aria-label="Strumenti di gestione">
+      <article class="card destination destination-primary">
+        <p class="eyebrow">Prodotti</p>
+        <h2>Online Backend</h2>
+        <p class="muted">Carica eBook, audiobook e boxBook. Gestisci copertine, anteprime e QR code.</p>
+        <button id="onlineButton" class="primary-button" type="button">Apri Online Backend</button>
+      </article>
+      <article class="card destination">
+        <p class="eyebrow">Report</p>
+        <h2>Utenti e download</h2>
+        <p class="muted">Consulta gli utenti, gli acquisti e lo storico dei download registrati.</p>
+        <button id="downloadReportButton" type="button">Apri il report</button>
+      </article>
+      <article class="card destination">
+        <p class="eyebrow">Sito pubblico</p>
+        <h2>asarati.it</h2>
+        <p class="muted">Visita il sito pubblico e controlla come vengono presentati i tuoi contenuti.</p>
+        <button id="animateButton" type="button">Apri il sito</button>
+      </article>
+    </section>
+    <section class="card local-section" aria-labelledby="local-title">
+      <h2 id="local-title">Ambiente locale</h2>
+      <p class="muted">Accedi agli strumenti di emulazione per le prove di sviluppo.</p>
+      <div class="local-actions">
+        <button id="emulateButton" type="button">Emulate Backend</button>
+        <button id="emulateHomeButton" type="button">Emulate Home</button>
+      </div>
+    </section>
+    <p class="footer">Asarati · Gestione dei contenuti editoriali</p>
+  </main>
   <script type="module">
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
     import { app } from "./scripts/firebase-config.js";
@@ -60,18 +135,5 @@
       window.location.href = 'https://asarati.it'; 
     });
   </script>
-
-  <button id="logoutButton">Logout</button>
-
-  <!-- Pulsante per Emulate -->
-  <button id="emulateButton">Emulate Backend</button> | 
-  <!-- Pulsante per Emulate Home -->
-  <button id="emulateHomeButton">Emulate Home</button> | 
-  <!-- Pulsante per Online -->
-  <button id="onlineButton">Online Backend</button> | 
-  <button id="downloadReportButton">Utenti e download</button> |
-  <!-- Pulsante per Animate -->
-  <button id="animateButton">Sito Online</button>
-
 </body>
 </html>
