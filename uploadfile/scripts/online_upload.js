@@ -649,13 +649,22 @@ function chooseRevision(productId, product) {
   revisionProduct = { id: productId, product };
   const input = document.getElementById("revisionFileInput");
   input.value = "";
-  input.accept = product.type === "ebook" ? ".epub,.pdf" : product.type === "audiobook" ? ".zip,.mp3,.wav,.m4a,.m4b,.mp4,audio/*" : ".zip";
+  const currentExtension = String(product.storageFileName || "").split(".").pop().toLowerCase();
+  input.accept = product.type === "ebook" ? ".epub,.pdf" : product.type === "audiobook" ? `.${currentExtension}` : ".zip";
   input.click();
 }
 
 document.getElementById("revisionFileInput").addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file || !revisionProduct) return;
+  if (revisionProduct.product.type === "audiobook") {
+    const expected = String(revisionProduct.product.storageFileName || "").split(".").pop().toLowerCase();
+    if (file.name.split(".").pop().toLowerCase() !== expected) {
+      window.alert(`La revisione deve mantenere il formato .${expected} del file originale.`);
+      event.target.value = "";
+      return;
+    }
+  }
   if (!window.confirm(`Caricare una nuova versione di “${revisionProduct.product.name || revisionProduct.id}”? Il file pubblicato verrà sostituito.`)) return;
   try {
     const contentType = file.type || "application/octet-stream";
