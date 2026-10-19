@@ -19,6 +19,11 @@ const createProductQrDownloadUrl = httpsCallable(functions, "createProductQrDown
 const createProductTrailerUpload = httpsCallable(functions, "createProductTrailerUpload");
 const recordProductTrailer = httpsCallable(functions, "recordProductTrailer");
 const getProductTrailerUrl = httpsCallable(functions, "getProductTrailerUrl");
+const generateAudiobookPreview = httpsCallable(functions, "generateAudiobookPreview", { timeout: 540000 });
+const getAudiobookPreview = httpsCallable(functions, "getAudiobookPreview");
+const setAudiobookPreviewPublished = httpsCallable(functions, "setAudiobookPreviewPublished", { timeout: 120000 });
+let audioPreviewSelection = null;
+let audioPreviewRequest = 0;
 let editingProduct = null;
 let revisionProduct = null;
 let trailerProductId = null;
@@ -49,7 +54,7 @@ async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, 
   if (!auth.currentUser) return messageEl.textContent = "Accedi con un account amministratore.";
   const allowedExtensions = {
     ebook: ["epub", "pdf", "zip"],
-    audiobook: ["mp3", "m4a", "m4b", "mp4", "zip"],
+    audiobook: ["mp3", "wav", "m4a", "m4b", "mp4", "zip"],
     boxbook: ["zip", "mp4"]
   };
   const extension = file?.name.split(".").pop().toLowerCase();
@@ -109,6 +114,16 @@ async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, 
       : "Prodotto pubblicato. QR e pagina stabile sono pronti.";
     sessionStorage.removeItem(draftKey);
     if (trailerInput) document.getElementById(trailerInput).value = "";
+    if (type === "audiobook" && document.getElementById("generateAudioPreviewOnUpload").checked) {
+      messageEl.textContent = "Prodotto caricato. Genero la bozza privata dell’anteprima audio…";
+      try {
+        await generateAudiobookPreview({ productId });
+        messageEl.textContent = "Prodotto caricato. Anteprima pronta: ascoltala dall’elenco e scegli se pubblicarla.";
+      } catch (previewError) {
+        messageEl.textContent = `Prodotto caricato. Anteprima non generata: ${previewError.message}. Puoi riprovare dall’elenco.`;
+      }
+      await displayUploadedProducts(type, listId);
+    }
   } catch (error) {
     console.error(error);
     messageEl.textContent = error.code ? `${error.code}: ${error.message}` : error.message || "Errore durante la creazione del prodotto.";
@@ -150,7 +165,9 @@ async function displayUploadedProducts(type, containerId) {
         ["Disponibilità", product.accessMode === "free" ? "Pubblico / gratuito" : "Protetto / pagamento"],
         ["Caricato il", formatDate(product.createdAt)], ["Caricato da", createdBy.email || "Non registrato"],
         ["ID autore", createdBy.uid || "Non registrato"], ["ID prodotto", id],
-        ["Trailer", product.trailerPath ? "Personalizzato" : "Trailer generale"],
+        [type === "audiobook" ? "Anteprima audio" : "Trailer", type === "audiobook"
+          ? (product.audioPreviewPublished ? "Pubblicata" : product.audioPreviewDraft ? "Bozza privata" : "Da generare")
+          : (product.trailerPath ? "Personalizzato" : "Non presente")],
         ["Ultima revisione", formatDate(product.revisedAt)], ["Modificato da", updatedBy.email || "—"],
         ["Vendite pagate", String(summary.sales ?? "—")],
         ["Incasso lordo", summary.revenueCents === undefined ? "—" : formatCents(summary.revenueCents)],
@@ -169,8 +186,18 @@ async function displayUploadedProducts(type, containerId) {
       const actions = document.createElement("div");
       actions.className = "product-actions";
 
-      actions.append(actionButton("Anteprima trailer", () => openTrailerPreview(id)));
-      actions.append(actionButton(product.trailerPath ? "Sostituisci trailer" : "Carica trailer", () => chooseProductTrailer(id)));
+      if (type === "audiobook") {
+        const generating = product.audioPreviewJob?.status === "running"
+          && Date.now() - (product.audioPreviewJob.startedAt?.toMillis?.() || 0) < 10 * 60 * 1000;
+        const generate = actionButton(generating ? "Elaborazione anteprima…" : product.audioPreviewDraft ? "Rigenera anteprima" : "Genera anteprima", (event) => generateAudioPreview(id, event.currentTarget));
+        generate.disabled = archived || generating;
+        actions.append(generate);
+        if (product.audioPreviewDraft) actions.append(actionButton("Ascolta / pubblica anteprima", () => openAudioPreview(id)));
+        if (product.audioPreviewPublished) actions.append(actionButton("Ritira anteprima", (event) => updateAudioPublication(id, false, event.currentTarget)));
+      } else {
+        if (product.trailerPath) actions.append(actionButton("Anteprima trailer", () => openTrailerPreview(id)));
+        actions.append(actionButton(product.trailerPath ? "Sostituisci trailer" : "Carica trailer", () => chooseProductTrailer(id)));
+      }
       actions.append(actionButton("Scarica file originale", () => downloadOriginal(id)));
       if (qrReady) {
         actions.append(actionButton("Scarica QR SVG", () => downloadQr(product.qrCodePath, id)));
@@ -406,6 +433,96 @@ async function downloadOriginal(productId) {
   }
 }
 
+
+async function generateAudioPreview(productId, button) {
+  button.disabled = true;
+  button.textContent = "Elaborazione anteprima…";
+  try {
+    await generateAudiobookPreview({ productId });
+    await displayUploadedProducts("audiobook", "audioList");
+    await openAudioPreview(productId);
+  } catch (error) {
+    window.alert(error.message || "Non è stato possibile generare l’anteprima.");
+    await displayUploadedProducts("audiobook", "audioList");
+  }
+}
+
+async function openAudioPreview(productId) {
+  const modal = document.getElementById("audioPreviewModal");
+  const player = document.getElementById("audioPreviewPlayer");
+  const message = document.getElementById("audioPreviewMessage");
+  const publish = document.getElementById("publishAudioPreview");
+  closeAudioPreview();
+  const request = audioPreviewRequest;
+  modal.classList.add("show");
+  publish.disabled = true;
+  message.textContent = "Caricamento bozza privata…";
+  try {
+    const { data } = await getAudiobookPreview({ productId });
+    if (request !== audioPreviewRequest || !modal.classList.contains("show")) return;
+    audioPreviewSelection = { productId, draftId: data.draftId };
+    player.src = data.previewUrl;
+    player.load();
+    const svg = document.getElementById("audioPreviewWaveform");
+    svg.replaceChildren();
+    (data.peaks || []).forEach((peak, index, peaks) => {
+      const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      const step = 200 / peaks.length;
+      const height = Math.max(2, peak * 42);
+      for (const [key, value] of Object.entries({ x: index * step, y: (48 - height) / 2, width: step * 0.6, height, fill: "#aeb8c7" })) bar.setAttribute(key, value);
+      svg.append(bar);
+    });
+    message.textContent = `Bozza privata di ${Math.round(data.duration)} secondi, con sfumatura finale. Ascoltala prima di pubblicarla sul QRC.`;
+    publish.disabled = false;
+  } catch (error) {
+    if (request !== audioPreviewRequest) return;
+    message.textContent = error.message || "Anteprima non disponibile.";
+  }
+}
+
+function closeAudioPreview() {
+  audioPreviewRequest += 1;
+  audioPreviewSelection = null;
+  const player = document.getElementById("audioPreviewPlayer");
+  player.pause();
+  player.removeAttribute("src");
+  player.load();
+  document.getElementById("audioPreviewWaveform").replaceChildren();
+  document.getElementById("audioPreviewModal").classList.remove("show");
+}
+
+async function updateAudioPublication(productId, published, button, draftId) {
+  button.disabled = true;
+  try {
+    await setAudiobookPreviewPublished({ productId, published, ...(draftId ? { draftId } : {}) });
+    closeAudioPreview();
+    await displayUploadedProducts("audiobook", "audioList");
+  } catch (error) {
+    window.alert(error.message || "Pubblicazione non aggiornata.");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+document.getElementById("publishAudioPreview").addEventListener("click", (event) => {
+  if (audioPreviewSelection) {
+    void updateAudioPublication(audioPreviewSelection.productId, true, event.currentTarget, audioPreviewSelection.draftId);
+  }
+});
+document.getElementById("closeAudioPreview").addEventListener("click", closeAudioPreview);
+document.getElementById("audioPreviewModal").addEventListener("click", (event) => {
+  if (event.target.id === "audioPreviewModal") closeAudioPreview();
+});
+document.getElementById("audioPreviewPlayer").addEventListener("timeupdate", (event) => {
+  const audio = event.currentTarget;
+  const progress = audio.duration > 0 ? audio.currentTime / audio.duration : 0;
+  const bars = document.getElementById("audioPreviewWaveform").children;
+  Array.from(bars).forEach((bar, index) => bar.setAttribute("fill", (index + 0.5) / bars.length <= progress ? "#1d4ed8" : "#aeb8c7"));
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeAudioPreview();
+});
+
 async function openTrailerPreview(productId) {
   const modal = document.getElementById("trailerModal");
   const player = document.getElementById("trailerPlayer");
@@ -532,7 +649,7 @@ function chooseRevision(productId, product) {
   revisionProduct = { id: productId, product };
   const input = document.getElementById("revisionFileInput");
   input.value = "";
-  input.accept = product.type === "ebook" ? ".epub,.pdf" : product.type === "audiobook" ? ".mp3,audio/*" : ".zip";
+  input.accept = product.type === "ebook" ? ".epub,.pdf" : product.type === "audiobook" ? ".zip,.mp3,.wav,.m4a,.m4b,.mp4,audio/*" : ".zip";
   input.click();
 }
 
@@ -584,7 +701,7 @@ function bind(button, folder, type) {
 }
 
 bind("uploadEbookButton", { file: "ebookInput", trailer: "ebookTrailerInput", access: "ebookAccessMode", name: "ebookName", description: "ebookDescription", price: "ebookPrice", message: "ebookMessage", result: "ebookFileId" }, "ebook");
-bind("uploadaudiobookButton", { file: "audiobookInput", trailer: "audiobookTrailerInput", access: "audiobookAccessMode", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
+bind("uploadaudiobookButton", { file: "audiobookInput", trailer: null, access: "audiobookAccessMode", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
 bind("uploadfileZipButton", { file: "fileZipInput", trailer: "boxbookTrailerInput", access: "boxbookAccessMode", name: "boxbookName", description: "boxbookDescription", price: "fileZipPrice", message: "fileZipMessage", result: "boxbookFileId" }, "boxbook");
 
 for (const [accessId, priceId] of [["ebookAccessMode", "ebookPrice"], ["audiobookAccessMode", "audiobookPrice"], ["boxbookAccessMode", "fileZipPrice"]]) {
@@ -603,7 +720,7 @@ for (const [accessId, priceId] of [["ebookAccessMode", "ebookPrice"], ["audioboo
 const toggleBtn = document.getElementById("toggleFilesBtn");
 const fileSections = ["ebookList", "audioList", "boxList"];
 toggleBtn.addEventListener("click", () => {
-  const show = fileSections.some((id) => document.getElementById(id).style.display === "none");
+  const show = fileSections.some((id) => window.getComputedStyle(document.getElementById(id)).display === "none");
   fileSections.forEach((id) => { document.getElementById(id).style.display = show ? "grid" : "none"; });
   toggleBtn.textContent = show ? "Nascondi prodotti caricati" : "Mostra prodotti caricati";
 });

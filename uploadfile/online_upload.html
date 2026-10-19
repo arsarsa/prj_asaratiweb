@@ -101,14 +101,15 @@
   <p id="ebookFileId"></p>
   </section>
 
-  <section class="upload-card"><h2 class="upload-title"><span>Carica AudioBook</span><span class="upload-extensions">(.mp3 | .m4a | .m4b | .mp4 | .zip)</span></h2>
+  <section class="upload-card"><h2 class="upload-title"><span>Carica AudioBook</span><span class="upload-extensions">(.zip | .mp3 | .wav | .m4a | .m4b | .mp4)</span></h2>
   <input type="text" id="audiobookName" placeholder="Titolo prodotto">
   <input type="text" id="audiobookDescription" placeholder="Descrizione">
-  <input type="file" id="audiobookInput" accept=".mp3,.m4a,.m4b,.mp4,.zip,audio/*">
+  <input type="file" id="audiobookInput" accept=".zip,.mp3,.wav,.m4a,.m4b,.mp4,audio/*">
   <label for="audiobookAccessMode">Disponibilità</label>
   <select id="audiobookAccessMode"><option value="paid">Protetto — a pagamento</option><option value="free">Pubblico — gratuito dalla pagina QR</option></select>
-  <label for="audiobookTrailerInput">Trailer opzionale (.mp4)</label>
-  <input type="file" id="audiobookTrailerInput" accept="video/mp4,.mp4">
+  <label><input type="checkbox" id="generateAudioPreviewOnUpload" checked> Genera anteprima audio dal file caricato</label>
+  <p>Primi 120 secondi del capitolo 001, con sfumatura finale di 5 secondi. Se il segmento è breve, prosegue con i successivi dello stesso capitolo.</p>
+  <p>File nello ZIP: 001_001_001.mp3 o .wav. Sono compatibili anche nomi come USN_Cpt01-01.mp3. La bozza resta privata fino alla pubblicazione.</p>
   <input type="number" id="audiobookPrice" placeholder="Prezzo in EUR">
   <button id="uploadaudiobookButton">Carica audioBook</button>
   <p id="audiobookMessage"></p>
@@ -164,6 +165,19 @@
   </div>
 </div>
 
+<div id="audioPreviewModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="audioPreviewTitle">
+  <div class="modal-card">
+    <h2 id="audioPreviewTitle">Anteprima audio</h2>
+    <svg id="audioPreviewWaveform" viewBox="0 0 200 48" preserveAspectRatio="none" role="img" aria-label="Forma d’onda dell’anteprima" style="width:100%;height:56px"></svg>
+    <audio id="audioPreviewPlayer" controls preload="none" style="width:100%"></audio>
+    <p id="audioPreviewMessage" role="status"></p>
+    <div class="modal-actions">
+      <button id="closeAudioPreview" type="button">Chiudi</button>
+      <button id="publishAudioPreview" class="primary-button" type="button" disabled>Pubblica anteprima sul QRC</button>
+    </div>
+  </div>
+</div>
+
 <!-- Accesso amministratore richiesto -->
 <div id="loginModal" class="admin-modal" role="dialog" aria-modal="true">
   <div class="modal-card">
@@ -173,6 +187,6 @@
   </div>
 </div>
 
-  <script type="module" src="scripts/online_upload.js?v=20261015-3"></script>
+  <script type="module" src="scripts/online_upload.js?v=20261019-audio-1"></script>
 </body>
 </html>

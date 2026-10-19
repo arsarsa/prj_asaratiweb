@@ -13,6 +13,12 @@ admin.initializeApp({
 const db = admin.firestore();
 const bucket = admin.storage().bucket("asarati-9aafe.firebasestorage.app");
 
+const { createAudioPreviewHandlers } = require("./audio-preview-functions");
+const audioPreviews = createAudioPreviewHandlers({ functions, admin, db, bucket });
+exports.generateAudiobookPreview = functions.runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onCall(audioPreviews.generate);
+exports.getAudiobookPreview = functions.https.onCall(audioPreviews.preview);
+exports.setAudiobookPreviewPublished = functions.runWith({ timeoutSeconds: 120, memory: "256MB" }).https.onCall(audioPreviews.publish);
+
 let resendClient;
 
 function getRuntimeConfig() {
@@ -62,7 +68,7 @@ exports.createProductUpload = functions.https.onCall(async (data, context) => {
   const extension = fileName.split(".").pop().toLowerCase();
   const allowedExtensions = {
     ebook: ["epub", "pdf", "zip"],
-    audiobook: ["mp3", "m4a", "m4b", "mp4", "zip"],
+    audiobook: ["mp3", "wav", "m4a", "m4b", "mp4", "zip"],
     boxbook: ["zip", "mp4"]
   };
   const trailerFileName = String(data.trailerFileName || "").trim();
@@ -532,6 +538,8 @@ exports.duplicateProduct = functions.https.onCall(async (data, context) => {
     createdBy,
     counters: { downloads: 0, total: 0 }
   };
+  // A copied product must generate and approve its own preview.
+  Object.keys(duplicate).filter((field) => field.startsWith("audioPreview")).forEach((field) => delete duplicate[field]);
   const sourceTrailerPath = source.trailerPath === `public_file/product_trailers/${sourceId}.mp4`
     ? source.trailerPath
     : null;
