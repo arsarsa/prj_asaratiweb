@@ -109,6 +109,7 @@
   <select id="audiobookAccessMode"><option value="paid">Protetto — a pagamento</option><option value="free">Pubblico — gratuito dalla pagina QR</option></select>
   <label for="audiobookTrailerInput">Trailer opzionale (.mp4)</label>
   <input type="file" id="audiobookTrailerInput" accept="video/mp4,.mp4">
+  <p>Dal pacchetto ZIP vengono lette automaticamente cover.jpg e le durate dei capitoli. La copertina compare nella scheda prodotto; il ReadMe rimane incluso nel download.</p>
   <label><input type="checkbox" id="generateAudioPreviewOnUpload" checked> Genera anteprima audio dal file caricato</label>
   <p>Primi 120 secondi del capitolo 001, con sfumatura finale di 5 secondi. Se il segmento è breve, prosegue con i successivi dello stesso capitolo.</p>
   <p>File nello ZIP: 001_001_001.mp3 o .wav. Sono compatibili anche nomi come USN_Cpt01-01.mp3. La bozza resta privata fino alla pubblicazione.</p>
@@ -189,6 +190,6 @@
   </div>
 </div>
 
-  <script type="module" src="scripts/online_upload.js?v=20261019-audio-trailer-2"></script>
+  <script type="module" src="scripts/online_upload.js?v=20261019-cover-duration-3"></script>
 </body>
 </html>

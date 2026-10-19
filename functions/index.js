@@ -15,6 +15,7 @@ const bucket = admin.storage().bucket("asarati-9aafe.firebasestorage.app");
 
 const { createAudioPreviewHandlers } = require("./audio-preview-functions");
 const audioPreviews = createAudioPreviewHandlers({ functions, admin, db, bucket });
+exports.inspectAudiobookPackage = functions.runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onCall(audioPreviews.inspect);
 exports.generateAudiobookPreview = functions.runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onCall(audioPreviews.generate);
 exports.getAudiobookPreview = functions.https.onCall(audioPreviews.preview);
 exports.setAudiobookPreviewPublished = functions.runWith({ timeoutSeconds: 120, memory: "256MB" }).https.onCall(audioPreviews.publish);

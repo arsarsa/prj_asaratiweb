@@ -22,6 +22,7 @@ const getProductTrailerUrl = httpsCallable(functions, "getProductTrailerUrl");
 const generateAudiobookPreview = httpsCallable(functions, "generateAudiobookPreview", { timeout: 540000 });
 const getAudiobookPreview = httpsCallable(functions, "getAudiobookPreview");
 const setAudiobookPreviewPublished = httpsCallable(functions, "setAudiobookPreviewPublished", { timeout: 120000 });
+const inspectAudiobookPackage = httpsCallable(functions, "inspectAudiobookPackage", { timeout: 540000 });
 let audioPreviewSelection = null;
 let audioPreviewRequest = 0;
 let editingProduct = null;
@@ -114,14 +115,25 @@ async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, 
       : "Prodotto pubblicato. QR e pagina stabile sono pronti.";
     sessionStorage.removeItem(draftKey);
     if (trailerInput) document.getElementById(trailerInput).value = "";
-    if (type === "audiobook" && document.getElementById("generateAudioPreviewOnUpload").checked) {
-      messageEl.textContent = "Prodotto caricato. Genero la bozza privata dell’anteprima audio…";
+    if (type === "audiobook") {
+      const notes = [];
+      messageEl.textContent = "Prodotto caricato. Leggo copertina e durata dei capitoli…";
       try {
-        await generateAudiobookPreview({ productId });
-        messageEl.textContent = "Prodotto caricato. Anteprima pronta: ascoltala dall’elenco e scegli se pubblicarla.";
-      } catch (previewError) {
-        messageEl.textContent = `Prodotto caricato. Anteprima non generata: ${previewError.message}. Puoi riprovare dall’elenco.`;
+        const { data: info } = await inspectAudiobookPackage({ productId });
+        notes.push(`Durata totale: ${formatDuration(info.durationSeconds)}. ${info.coverFound ? 'Copertina estratta e pronta nella scheda QR.' : 'Nessuna cover.jpg trovata nello ZIP.'}`);
+      } catch (inspectionError) {
+        notes.push(`Copertina e durate non estratte: ${inspectionError.message}. Puoi riprovare dall’elenco.`);
       }
+      if (document.getElementById("generateAudioPreviewOnUpload").checked) {
+        messageEl.textContent = "Prodotto caricato. Genero la bozza privata dell’anteprima audio…";
+        try {
+          await generateAudiobookPreview({ productId });
+          notes.push("Anteprima pronta: ascoltala dall’elenco e scegli se pubblicarla.");
+        } catch (previewError) {
+          notes.push(`Anteprima non generata: ${previewError.message}. Puoi riprovare dall’elenco.`);
+        }
+      }
+      messageEl.textContent = `Prodotto caricato. ${notes.join(' ')}`;
       await displayUploadedProducts(type, listId);
     }
   } catch (error) {
@@ -150,6 +162,14 @@ async function displayUploadedProducts(type, containerId) {
       const row = document.createElement("article");
       row.className = "product-card";
       row.id = `product-${id}`;
+      if (product.coverImage) {
+        const cover = document.createElement("img");
+        cover.src = product.coverImage;
+        cover.alt = `Copertina di ${product.name || id}`;
+        cover.loading = "lazy";
+        cover.style.cssText = "display:block;width:110px;height:160px;object-fit:contain;margin-bottom:12px";
+        row.append(cover);
+      }
       const qrReady = Boolean(product.qrCodeGeneratedAt && product.qrCodePath);
       const title = document.createElement("h3");
       title.textContent = product.name || id;
@@ -165,6 +185,7 @@ async function displayUploadedProducts(type, containerId) {
         ["Disponibilità", product.accessMode === "free" ? "Pubblico / gratuito" : "Protetto / pagamento"],
         ["Caricato il", formatDate(product.createdAt)], ["Caricato da", createdBy.email || "Non registrato"],
         ["ID autore", createdBy.uid || "Non registrato"], ["ID prodotto", id],
+        ...(type === "audiobook" ? [["Durata totale", formatDuration(product.audiobookPackage?.durationSeconds)]] : []),
         ["Trailer", product.trailerPath ? "Personalizzato" : "Non presente"],
         ...(type === "audiobook" ? [["Anteprima audio", product.audioPreviewPublished ? "Pubblicata" : product.audioPreviewDraft ? "Bozza privata" : "Da generare"]] : []),
         ["Ultima revisione", formatDate(product.revisedAt)], ["Modificato da", updatedBy.email || "—"],
@@ -186,6 +207,7 @@ async function displayUploadedProducts(type, containerId) {
       actions.className = "product-actions";
 
       if (type === "audiobook") {
+        actions.append(actionButton("Estrai copertina e durate", (event) => inspectAudioPackage(id, event.currentTarget)));
         const generating = product.audioPreviewJob?.status === "running"
           && Date.now() - (product.audioPreviewJob.startedAt?.toMillis?.() || 0) < 10 * 60 * 1000;
         const generate = actionButton(generating ? "Elaborazione anteprima…" : product.audioPreviewDraft ? "Rigenera anteprima" : "Genera anteprima", (event) => generateAudioPreview(id, event.currentTarget));
@@ -217,7 +239,21 @@ async function displayUploadedProducts(type, containerId) {
       } else {
         actions.append(actionButton("Ripristina", () => restoreArchivedProduct(id)));
       }
-      row.append(title, meta, description, actions);
+      row.append(title, meta, description);
+      if (type === "audiobook" && product.audiobookPackage?.tracks?.length) {
+        const details = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.textContent = `Tracce e durata (${product.audiobookPackage.tracks.length})`;
+        const list = document.createElement("ol");
+        for (const track of product.audiobookPackage.tracks) {
+          const item = document.createElement("li");
+          item.textContent = `${track.fileName.split('/').pop()} — ${formatDuration(track.durationSeconds)}`;
+          list.append(item);
+        }
+        details.append(summary, list);
+        row.append(details);
+      }
+      row.append(actions);
       container.append(row);
     }
     if (!products.length) {
@@ -234,6 +270,24 @@ async function displayUploadedProducts(type, containerId) {
 function formatDate(value) {
   if (!value?.toDate) return "—";
   return new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(value.toDate());
+}
+
+function formatDuration(seconds) {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds <= 0) return "Da leggere";
+  const rounded = Math.round(seconds);
+  return `${Math.floor(rounded / 60)} min ${String(rounded % 60).padStart(2, "0")} s`;
+}
+
+async function inspectAudioPackage(productId, button) {
+  button.disabled = true;
+  button.textContent = "Lettura copertina e durate…";
+  try {
+    await inspectAudiobookPackage({ productId });
+  } catch (error) {
+    window.alert(error.message || "Non è stato possibile analizzare il pacchetto.");
+  } finally {
+    await displayUploadedProducts("audiobook", "audioList");
+  }
 }
 
 function formatCents(value) {

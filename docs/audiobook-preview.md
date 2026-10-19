@@ -65,3 +65,26 @@ autorizzazioni, concorrenza e pubblicazione. Il test facoltativo
 `node functions/test/audio-preview-ui.cjs` richiede Playwright e simula Firebase:
 non legge o modifica dati di produzione. L'elaborazione dei contenuti editoriali
 reali e la loro pubblicazione rimangono azioni esplicite dell'amministratore.
+
+
+## Copertina e durate del pacchetto
+
+Dopo un upload audiobook, il pannello esegue `inspectAudiobookPackage` prima
+ dell'eventuale generazione della bozza audio. Il comando **Estrai copertina e
+ durate** è disponibile anche sui prodotti esistenti. Non riproduce i capitoli:
+ ffprobe ne legge i metadati, conservando durata totale e durata di ogni traccia
+ in `products.audiobookPackage`, con riferimento alla versione del file originale.
+
+Una sola `cover.jpg` è riconosciuta nella radice o nella cartella del libro nello
+ ZIP. Metadati macOS sono ignorati. La JPEG è verificata (massimo 10 MB e 32 MP),
+ ridimensionata entro 1200 pixel e salvata senza metadati in
+ `public_file/product_covers/{productId}/{jobId}.jpg`. L'URL pubblico della sola
+ copertina viene registrato in `coverImage`, già supportato dalla scheda QRC,
+ insieme a `coverPath`. Le regole Storage non vengono ampliate; il download della
+ copertina usa un token dedicato. Senza una cover non si sostituiscono immagini
+ preesistenti. Il ReadMe e lo ZIP originale non vengono modificati.
+
+L'analisi richiede accesso admin, usa lo stesso lock delle anteprime e verifica
+ che la versione dell'originale sia ancora corrente prima di aggiornare il prodotto.
+ Non pubblica né l'audio integrale né la bozza audio. Non modifica Stripe o il
+ percorso di pagamento, che resta oggetto del collaudo in modalità test.

@@ -7,6 +7,7 @@ const { execFileSync } = require("node:child_process");
 const ffmpeg = require("ffmpeg-static");
 const { audioPosition, selectFirstChapter, buildPreview, waveform } = require("../audio-preview");
 const { createAudioPreviewHandlers } = require("../audio-preview-functions");
+const { inspectPackage, archiveTracks } = require("../audiobook-package");
 
 // Minimal stored ZIP fixtures, independent of any ZIP implementation under test.
 function zipFiles(files) {
@@ -141,4 +142,66 @@ test("approved current draft publishes its waveform to the QRC product fields", 
   assert.equal(current().audioPreviewPath, "public_file/product_audio_previews/audio01.mp3");
   assert.deepEqual(current().audioPreviewPeaks, draft.peaks);
   assert.deepEqual(copies, [[draft.path, "public_file/product_audio_previews/audio01.mp3"]]);
+});
+
+
+async function packageFixture(directory, withCover = true) {
+  const wav = path.join(directory, "fixture.wav");
+  execFileSync(ffmpeg, ["-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", wav]);
+  const audio = await fs.readFile(wav);
+  const files = [["Book/001_002_001.wav", audio], ["Book/001_001_001.wav", audio], ["Book/ReadMe.txt", Buffer.from("Istruzioni")]];
+  if (withCover) {
+    const cover = path.join(directory, "fixture.jpg");
+    execFileSync(ffmpeg, ["-loglevel", "error", "-f", "lavfi", "-i", "color=c=blue:s=32x48", "-frames:v", "1", cover]);
+    files.push(["Book/cover.jpg", await fs.readFile(cover)]);
+  }
+  return zipFiles(files);
+}
+
+test("package inspection reads cover and all chapter durations without playback or source changes", async (t) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "package-test-"));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const original = await packageFixture(directory);
+  const source = path.join(directory, "book.zip");
+  await fs.writeFile(source, original);
+  const info = await inspectPackage({ source, fileName: "book.zip", directory });
+  assert.equal(info.tracks.length, 2);
+  assert.equal(info.tracks[0].chapter, 1);
+  assert.equal(info.tracks[1].chapter, 2);
+  assert.equal(info.durationSeconds, 4);
+  assert.ok((await fs.stat(info.cover)).size > 0);
+  assert.deepEqual(await fs.readFile(source), original);
+});
+
+test("package without cover reports durations without inventing a cover", async (t) => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "package-no-cover-"));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const source = path.join(directory, "book.zip");
+  await fs.writeFile(source, await packageFixture(directory, false));
+  const info = await inspectPackage({ source, fileName: "book.zip", directory });
+  assert.equal(info.cover, null);
+  assert.equal(info.durationSeconds, 4);
+  assert.throws(() => archiveTracks([{fileName:"001_001_001.mp3"},{fileName:"002_001_001.mp3"}]), /solo libro/);
+});
+
+test("admin inspection publishes only the cover and metadata, keeping audio preview private", async (t) => {
+  const { Readable } = require("node:stream");
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "package-handler-"));
+  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  const bytes = await packageFixture(directory);
+  const uploaded = [];
+  const bucket = {
+    name: "test-bucket",
+    file: () => ({ getMetadata: async () => [{generation:"v1",size:bytes.length}], createReadStream: () => Readable.from([bytes]) }),
+    upload: async (file, options) => { uploaded.push({ bytes:await fs.readFile(file), options }); },
+  };
+  const { handlers, current } = mockHandlers({ ...product, audioPreviewPublished:false }, bucket);
+  const info = await handlers.inspect({productId:"audio01"}, auth);
+  assert.equal(info.coverFound, true);
+  assert.equal(current().audiobookPackage.durationSeconds, 4);
+  assert.equal(current().audioPreviewPublished, false);
+  assert.equal(uploaded.length, 1);
+  assert.match(uploaded[0].options.destination, /^public_file\/product_covers\/audio01\/.+\.jpg$/);
+  assert.equal(uploaded[0].options.metadata.contentType, "image/jpeg");
+  assert.match(current().coverImage, /^https:\/\/firebasestorage.googleapis.com\/v0\/b\/test-bucket\/o\//);
 });

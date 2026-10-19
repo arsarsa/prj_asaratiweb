@@ -43,6 +43,7 @@ const assert = require("node:assert/strict");
         export const getFunctions = () => ({});
         export const httpsCallable = (unused, name) => async data => {
           window.calls.push({ name, data });
+          if (name === 'inspectAudiobookPackage') { window.fixture.coverImage='/fixture.jpg'; window.fixture.audiobookPackage={durationSeconds:4,tracks:[{fileName:'001_001_001.mp3',durationSeconds:4}]}; return {data:{success:true}}; }
           if (name === 'generateAudiobookPreview') { window.fixture.audioPreviewDraft = {id:'draft01'}; return {data:{success:true}}; }
           if (name === 'getAudiobookPreview') return {data:{draftId:'draft01',previewUrl:'/fixture.mp3',duration:120,peaks:Array(120).fill(0.7)}};
           if (name === 'setAudiobookPreviewPublished') { window.fixture.audioPreviewPublished=data.published; return {data:{published:data.published}}; }
@@ -52,6 +53,9 @@ const assert = require("node:assert/strict");
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/uploadfile/online_upload.html`);
     await page.getByRole("button", { name: "Mostra prodotti caricati" }).click();
+    await page.getByRole("button", { name: "Estrai copertina e durate", exact: true }).click();
+    await page.locator('img[alt="Copertina di Audio di prova"]').waitFor({state:"visible"});
+    assert.equal(await page.getByText("4 s", {exact:false}).count() > 0, true);
     assert.equal(await page.locator("#audiobookTrailerInput").isVisible(), true);
     assert.equal(await page.getByRole("button", { name: "Carica trailer", exact: true }).count(), 1);
     await page.getByRole("button", { name: "Genera anteprima", exact: true }).click();

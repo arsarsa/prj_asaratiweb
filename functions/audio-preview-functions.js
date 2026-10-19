@@ -3,6 +3,7 @@ const os = require("node:os");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { buildPreview, copyBounded, MAX_SOURCE_BYTES } = require("./audio-preview");
+const { inspectPackage } = require("./audiobook-package");
 
 function createAudioPreviewHandlers({ functions, admin, db, bucket }) {
   const HttpsError = functions.https.HttpsError;
@@ -109,6 +110,53 @@ function createAudioPreviewHandlers({ functions, admin, db, bucket }) {
       if (directory) await fs.rm(directory, { recursive: true, force: true });
     }
   }
+  async function inspect(data, context) {
+    const ref = reference(data, context);
+    const { product, jobId } = await acquire(ref, "inspect-package");
+    let directory;
+    let coverPath;
+    let saved = false;
+    try {
+      const objectPath = sourcePath(product, ref.id);
+      const [metadata] = await bucket.file(objectPath).getMetadata();
+      if (!Number(metadata.size) || Number(metadata.size) > MAX_SOURCE_BYTES) {
+        throw new HttpsError("failed-precondition", "Il pacchetto deve avere dimensione compresa tra 1 byte e 512 MB.");
+      }
+      directory = await fs.mkdtemp(path.join(os.tmpdir(), "audiobook-package-"));
+      const source = path.join(directory, "source");
+      const sourceGeneration = String(metadata.generation);
+      await copyBounded(bucket.file(objectPath, { generation: sourceGeneration }).createReadStream(), source, MAX_SOURCE_BYTES);
+      const info = await inspectPackage({ source, fileName: product.storageFileName, directory });
+      const fields = { audiobookPackage: {
+        sourcePath: objectPath, sourceGeneration, durationSeconds: info.durationSeconds,
+        tracks: info.tracks, inspectedAt: now(),
+      } };
+      if (info.cover) {
+        const token = crypto.randomUUID();
+        coverPath = `public_file/product_covers/${ref.id}/${jobId}.jpg`;
+        await bucket.upload(info.cover, { destination: coverPath, resumable: false, metadata: {
+          contentType: "image/jpeg", cacheControl: "public, max-age=3600",
+          metadata: { firebaseStorageDownloadTokens: token },
+        } });
+        fields.coverPath = coverPath;
+        fields.coverImage = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(coverPath)}?alt=media&token=${token}`;
+      }
+      await assertCurrentSource(await getProduct(ref), ref.id, { sourcePath: objectPath, sourceGeneration });
+      await complete(ref, jobId, fields);
+      saved = true;
+      if (coverPath && product.coverPath?.startsWith(`public_file/product_covers/${ref.id}/`)) {
+        await bucket.file(product.coverPath).delete({ ignoreNotFound: true }).catch(console.error);
+      }
+      return { success: true, durationSeconds: info.durationSeconds, tracks: info.tracks, coverFound: Boolean(info.cover) };
+    } catch (error) {
+      await failed(ref, jobId, error);
+      if (coverPath && !saved) await bucket.file(coverPath).delete({ ignoreNotFound: true }).catch(console.error);
+      if (error instanceof HttpsError) throw error;
+      throw new HttpsError("failed-precondition", `Analisi del pacchetto non riuscita. ${error.message}`.slice(0, 500));
+    } finally {
+      if (directory) await fs.rm(directory, { recursive: true, force: true });
+    }
+  }
   async function preview(data, context) {
     const ref = reference(data, context);
     const product = await getProduct(ref);
@@ -154,7 +202,7 @@ function createAudioPreviewHandlers({ functions, admin, db, bucket }) {
       throw new HttpsError("internal", "Impossibile aggiornare la pubblicazione dell’anteprima. Riprova.");
     }
   }
-  return { generate, preview, publish };
+  return { generate, preview, publish, inspect };
 }
 
 module.exports = { createAudioPreviewHandlers };

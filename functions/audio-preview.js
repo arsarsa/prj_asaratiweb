@@ -150,4 +150,4 @@ async function buildPreview({ source, fileName, directory, ffmpegPath = require(
   return { output, duration, fadeSeconds, peaks: waveform(pcm), selectedNames };
 }
 
-module.exports = { buildPreview, audioPosition, selectFirstChapter, waveform, copyBounded, MAX_SOURCE_BYTES };
+module.exports = { buildPreview, audioPosition, selectFirstChapter, waveform, copyBounded, MAX_SOURCE_BYTES, MAX_ENTRY_BYTES, openArchive, listEntries };
