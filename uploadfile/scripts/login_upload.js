@@ -69,7 +69,13 @@ export async function resetPassword(email) {
     } catch (error) {
         // Non rivelare se un indirizzo è registrato.
         if (error.code === "auth/user-not-found") return;
+        console.error("Recupero password non riuscito:", error.code);
+        if (error.code?.startsWith("auth/api-key-expired") || error.code === "auth/invalid-api-key") {
+            throw new Error("Firebase ha rifiutato la richiesta: l’email non è stata inviata. Se stai usando il browser della chat, apri questa pagina in Safari o Chrome e riprova.");
+        }
         const messages = {
+            "auth/operation-not-allowed": "Il recupero tramite email non è disponibile. Contatta l’amministratore.",
+            "auth/unauthorized-continue-uri": "L’indirizzo di ritorno non è autorizzato. Contatta l’amministratore.",
             "auth/invalid-email": "Inserisci un indirizzo email valido.",
             "auth/too-many-requests": "Troppe richieste. Attendi qualche minuto e riprova.",
             "auth/network-request-failed": "Connessione non disponibile. Controlla la rete e riprova."
