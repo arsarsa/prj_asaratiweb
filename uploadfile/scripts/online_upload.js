@@ -28,6 +28,10 @@ let audioPreviewRequest = 0;
 let editingProduct = null;
 let revisionProduct = null;
 let trailerProductId = null;
+let inventoryPage = 0;
+let inventoryPageCount = 1;
+const inventoryPageSize = 5;
+const inventoryRequests = {};
 let summaryPage = 0;
 let summaryPageCount = 1;
 let summaryRequest = 0;
@@ -114,7 +118,7 @@ async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, 
     const download = actionButton("Scarica QR SVG", () => downloadQr(qrPath, productId));
     resultEl.append(link, qrPreview, download);
     const listId = { ebook: "ebookList", audiobook: "audioList", boxbook: "boxList", file: "genericList" }[type];
-    await displayUploadedProducts(type, listId);
+    await renderInventory();
     messageEl.textContent = accessMode === "free"
       ? "Prodotto gratuito pubblicato. QR e download dalla pagina QR sono pronti."
       : "Prodotto pubblicato. QR e pagina stabile sono pronti.";
@@ -139,7 +143,7 @@ async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, 
         }
       }
       messageEl.textContent = `Prodotto caricato. ${notes.join(' ')}`;
-      await displayUploadedProducts(type, listId);
+      await renderInventory();
     }
   } catch (error) {
     console.error(error);
@@ -149,21 +153,29 @@ async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, 
 
 async function displayUploadedProducts(type, containerId) {
   const container = document.getElementById(containerId);
+  const request = inventoryRequests[containerId] = (inventoryRequests[containerId] || 0) + 1;
   container.replaceChildren();
   try {
     const snapshot = await getDocs(collection(db, "products"));
     const products = [];
     snapshot.forEach((item) => {
       const product = item.data();
-      if (product.type !== type) return;
+      if (!["ebook", "audiobook", "boxbook", "file"].includes(product.type)) return;
       const archived = Boolean(product.archivedAt);
       if (archived && !document.getElementById("showArchivedCheckbox").checked) return;
       products.push({ id: item.id, product, archived });
     });
-    products.sort((a, b) => (b.product.createdAt?.seconds || 0) - (a.product.createdAt?.seconds || 0));
-    const summaries = await loadProductSummaries(products.map(({ id }) => id));
+    products.sort(compareInventoryProducts);
+    inventoryPageCount = Math.max(1, Math.ceil(products.length / inventoryPageSize));
+    inventoryPage = Math.min(inventoryPage, inventoryPageCount - 1);
+    const pageProducts = products.slice(inventoryPage * inventoryPageSize, (inventoryPage + 1) * inventoryPageSize).filter(({ product }) => product.type === type);
+    const summaries = await loadProductSummaries(pageProducts.map(({ id }) => id));
+    if (request !== inventoryRequests[containerId]) return;
+    document.getElementById("inventoryPageInfo").textContent = `Pagina ${inventoryPage + 1} di ${inventoryPageCount} · ${products.length} prodotti`;
+    for (const id of ["inventoryFirst", "inventoryPrevious"]) document.getElementById(id).disabled = inventoryPage === 0;
+    for (const id of ["inventoryNext", "inventoryLast"]) document.getElementById(id).disabled = inventoryPage >= inventoryPageCount - 1;
 
-    for (const { id, product, archived } of products) {
+    for (const { id, product, archived } of pageProducts) {
       const row = document.createElement("article");
       row.className = archived ? "product-card is-archived" : "product-card";
       row.id = `product-${id}`;
@@ -296,10 +308,10 @@ async function displayUploadedProducts(type, containerId) {
       row.append(actions);
       container.append(row);
     }
-    if (!products.length) {
+    if (!products.length && type === "ebook") {
       const empty = document.createElement("p");
       empty.className = "product-message";
-      empty.textContent = "Nessun prodotto in questa sezione.";
+      empty.textContent = "Nessun prodotto da mostrare.";
       container.append(empty);
     }
   } catch (error) {
@@ -357,6 +369,12 @@ function actionButton(label, handler, extraClass = "") {
   return button;
 }
 
+function compareInventoryProducts(a, b) {
+  return (b.product.createdAt?.seconds || 0) - (a.product.createdAt?.seconds || 0) || a.id.localeCompare(b.id);
+}
+async function renderInventory() {
+  await Promise.all([["ebook", "ebookList"], ["audiobook", "audioList"], ["boxbook", "boxList"], ["file", "genericList"]].map(([type, id]) => displayUploadedProducts(type, id)));
+}
 function refreshProducts() {
   void displayUploadedProducts("ebook", "ebookList");
   void displayUploadedProducts("audiobook", "audioList");
@@ -440,7 +458,13 @@ async function renderProductSummary() {
           document.getElementById(id).style.display = "grid";
         });
         document.getElementById("toggleFilesBtn").textContent = "Nascondi prodotti caricati";
-        await displayUploadedProducts(product.type, listId);
+        const inventorySnapshot = await getDocs(collection(db, "products"));
+        const inventory = inventorySnapshot.docs.map((item) => ({ id: item.id, product: item.data() }))
+          .filter(({ product }) => ["ebook", "audiobook", "boxbook", "file"].includes(product.type) && (!product.archivedAt || showArchived.checked))
+          .sort(compareInventoryProducts);
+        inventoryPage = Math.max(0, Math.floor(inventory.findIndex((item) => item.id === id) / inventoryPageSize));
+        document.getElementById("inventoryPagination").hidden = false;
+        await renderInventory();
         window.location.hash = `product-${id}`;
         document.getElementById(`product-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
@@ -858,9 +882,23 @@ const fileSections = ["ebookList", "audioList", "boxList", "genericList"];
 toggleBtn.addEventListener("click", () => {
   const show = fileSections.some((id) => window.getComputedStyle(document.getElementById(id)).display === "none");
   fileSections.forEach((id) => { document.getElementById(id).style.display = show ? "grid" : "none"; });
+  document.getElementById("inventoryPagination").hidden = !show;
   toggleBtn.textContent = show ? "Nascondi prodotti caricati" : "Mostra prodotti caricati";
 });
-document.getElementById("showArchivedCheckbox").addEventListener("change", refreshProducts);
+document.getElementById("showArchivedCheckbox").addEventListener("change", () => { inventoryPage = 0; refreshProducts(); });
+for (const [id, nextPage] of [
+  ["inventoryFirst", () => 0], ["inventoryPrevious", () => Math.max(0, inventoryPage - 1)],
+  ["inventoryNext", () => Math.min(inventoryPageCount - 1, inventoryPage + 1)], ["inventoryLast", () => inventoryPageCount - 1]
+]) document.getElementById(id).addEventListener("click", async () => {
+  inventoryPage = nextPage();
+  await renderInventory();
+  const first = document.querySelector(".product-list .product-card");
+  first?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+document.getElementById("audioFileInfo").addEventListener("click", () => document.getElementById("audioFileInfoDialog").showModal());
+document.getElementById("audioFileInfoDialog").addEventListener("click", (event) => {
+  if (event.target === event.currentTarget) event.currentTarget.close();
+});
 
 refreshProducts();
 void renderTotalDownloads();
