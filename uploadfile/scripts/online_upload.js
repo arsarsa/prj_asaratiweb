@@ -29,6 +29,7 @@ let editingProduct = null;
 let revisionProduct = null;
 let trailerProductId = null;
 let summaryPage = 0;
+let summaryPageCount = 1;
 let summaryRequest = 0;
 const summaryPageSize = 5;
 
@@ -390,16 +391,22 @@ async function renderProductSummary() {
     if (!products.length) {
       container.textContent = "Non ci sono ancora prodotti.";
       document.getElementById("summaryPageInfo").textContent = "0 file";
+      document.getElementById("summaryFirst").disabled = true;
+      document.getElementById("summaryLast").disabled = true;
+      summaryPageCount = 1;
       document.getElementById("summaryPrevious").disabled = true;
       document.getElementById("summaryNext").disabled = true;
       return;
     }
     const pageCount = Math.max(1, Math.ceil(products.length / summaryPageSize));
+    summaryPageCount = pageCount;
     summaryPage = Math.min(summaryPage, pageCount - 1);
     const pageProducts = products.slice(summaryPage * summaryPageSize, (summaryPage + 1) * summaryPageSize);
     const summaries = await loadProductSummaries(pageProducts.map(({ id }) => id));
     if (request !== summaryRequest) return;
     document.getElementById("summaryPageInfo").textContent = `Pagina ${summaryPage + 1} di ${pageCount} · ${products.length} file`;
+    document.getElementById("summaryFirst").disabled = summaryPage === 0;
+    document.getElementById("summaryLast").disabled = summaryPage >= pageCount - 1;
     document.getElementById("summaryPrevious").disabled = summaryPage === 0;
     document.getElementById("summaryNext").disabled = summaryPage >= pageCount - 1;
     const table = document.createElement("table");
@@ -841,6 +848,8 @@ document.getElementById("toggleSummaryBtn").addEventListener("click", (event) =>
   event.currentTarget.textContent = panel.hidden ? "Mostra riepilogo file caricati" : "Nascondi riepilogo file caricati";
   if (!panel.hidden) void renderProductSummary();
 });
+document.getElementById("summaryFirst").addEventListener("click", () => { summaryPage = 0; void renderProductSummary(); });
+document.getElementById("summaryLast").addEventListener("click", () => { summaryPage = summaryPageCount - 1; void renderProductSummary(); });
 document.getElementById("summaryPrevious").addEventListener("click", () => { summaryPage = Math.max(0, summaryPage - 1); void renderProductSummary(); });
 document.getElementById("summaryNext").addEventListener("click", () => { summaryPage += 1; void renderProductSummary(); });
 

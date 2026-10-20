@@ -100,8 +100,14 @@
     }
 
     [hidden] { display: none !important; }
-    .generic-upload { margin-top: 20px; }
-    .generic-upload .upload-card { border: 0; box-shadow: none; padding: 0; }
+    .generic-upload { grid-column: 1; }
+    .generic-upload .upload-extensions { white-space: normal; line-height: 1.5; }
+    .pagination { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 14px; border-radius: 10px; background: #263244; color: #fff; }
+    .pagination button { min-width: 44px; min-height: 40px; padding: 7px 12px; background: #fff; color: #18212f; }
+    .pagination button:disabled { cursor: not-allowed; }
+    .pagination-info { min-width: 150px; text-align: center; font-variant-numeric: tabular-nums; }
+    nav[aria-label="Navigazione backend"] button, nav[aria-label="Navigazione backend"] .button-link { min-height: 42px; padding: 9px 15px; font-size: 14px; color: #18212f; background: #fff; }
+    nav[aria-label="Navigazione backend"] button:hover, nav[aria-label="Navigazione backend"] .button-link:hover { background: #f0f4f9; }
     .archived-badge { display: inline-block; margin: 0 0 10px; padding: 4px 8px; border-radius: 5px; color: #854d0e; background: #fef3c7; font-size: .78rem; font-weight: 700; }
     .product-card.is-archived { border-color: #e7cf99; }
 </style>
@@ -110,7 +116,7 @@
   <header class="page-header">
     <div><h1><span class="highlight-online">Online Backend</span></h1><p>Gestisci prodotti, revisioni e QR code.</p></div>
     <nav aria-label="Navigazione backend" style="display:flex;gap:8px;flex-wrap:wrap">
-      <button onclick="window.location.href='index_upload.html'">← Ritorna al pannello</button>
+      <button onclick="window.location.href='index_upload.html'">← Home Backend</button>
       <a class="button-link" href="/uploadfile/downloads_report.html">Utenti e download</a>
     </nav>
   </header>
@@ -122,10 +128,12 @@
     <p id="totalDownloads" class="total-downloads" aria-live="polite">Download totali: …</p>
     <p id="todayQrViews" class="today-qr-views" aria-live="polite">Visite QR oggi: …</p>
     <div id="productSummary" class="summary-scroll" aria-live="polite">Caricamento riepilogo…</div>
-    <nav class="inventory-toolbar" aria-label="Pagine riepilogo">
-      <button id="summaryPrevious" type="button">← Precedente</button>
-      <span id="summaryPageInfo" role="status"></span>
-      <button id="summaryNext" type="button">Successiva →</button>
+    <nav class="pagination" aria-label="Pagine riepilogo">
+      <button id="summaryFirst" type="button" aria-label="Prima pagina">&lt;&lt;</button>
+      <button id="summaryPrevious" type="button" aria-label="Pagina precedente">&lt;</button>
+      <span id="summaryPageInfo" class="pagination-info" role="status"></span>
+      <button id="summaryNext" type="button" aria-label="Pagina successiva">&gt;</button>
+      <button id="summaryLast" type="button" aria-label="Ultima pagina">&gt;&gt;</button>
     </nav>
   </section>
 
@@ -176,29 +184,21 @@
   <button id="uploadfileZipButton">Carica boxBook</button>
   <p id="fileZipMessage"></p>
   <p id="fileZipFileId"></p>
-  </section></div>
+  </section>
 
   <section class="upload-card generic-upload" aria-labelledby="genericUploadTitle">
-    <h2 id="genericUploadTitle">Carica file</h2>
+    <h2 id="genericUploadTitle" class="upload-title"><span>Carica file</span><span class="upload-extensions">(.pdf, .jpg, .png, .webp, .mp3, .wav, .m4a, .m4b, .aac, .ogg, .flac, .mp4, .zip)</span></h2>
     <p>Locandine, poster, foto, documenti e audio. Il download mantiene il formato originale.</p>
-    <div class="upload-grid">
-      <div class="upload-card">
-        <label for="genericName">Titolo</label><input id="genericName" type="text" placeholder="Titolo del file">
-        <label for="genericDescription">Descrizione</label><input id="genericDescription" type="text" placeholder="Breve descrizione">
-      </div>
-      <div class="upload-card">
-        <label for="genericInput">File (.pdf, .jpg, .png, .webp, .mp3, .wav, .m4a, .m4b, .aac, .ogg, .flac, .mp4, .zip)</label>
-        <input id="genericInput" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.mp3,.wav,.m4a,.m4b,.aac,.ogg,.flac,.mp4,.zip">
-      </div>
-      <div class="upload-card">
-        <label for="genericAccessMode">Disponibilità</label>
-        <select id="genericAccessMode"><option value="free">Pubblico — gratuito</option><option value="paid">Privato — a pagamento</option></select>
-        <label for="genericPrice">Prezzo (€)</label><input id="genericPrice" type="number" min="0" step="0.01" value="0" disabled>
-        <button id="uploadGenericButton" class="primary-button" type="button">Carica file</button>
-      </div>
-    </div>
+    <label for="genericName">Titolo</label><input id="genericName" type="text" placeholder="Titolo del file">
+    <label for="genericDescription">Descrizione</label><input id="genericDescription" type="text" placeholder="Breve descrizione">
+    <label for="genericInput">File da caricare</label>
+    <input id="genericInput" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.mp3,.wav,.m4a,.m4b,.aac,.ogg,.flac,.mp4,.zip">
+    <label for="genericAccessMode">Disponibilità</label>
+    <select id="genericAccessMode"><option value="free">Pubblico — gratuito</option><option value="paid">Privato — a pagamento</option></select>
+    <label for="genericPrice">Prezzo (€)</label><input id="genericPrice" type="number" min="0" step="0.01" value="0" disabled>
+    <button id="uploadGenericButton" class="primary-button" type="button">Carica file</button>
     <p id="genericMessage" role="status"></p><div id="genericFileId"></div>
-  </section>
+  </section></div>
 
   <div class="inventory-toolbar">
     <button id="toggleFilesBtn">Mostra prodotti caricati</button>
@@ -266,6 +266,6 @@
   </div>
 </div>
 
-  <script type="module" src="scripts/online_upload.js?v=20261020-generic-pagination"></script>
+  <script type="module" src="scripts/online_upload.js?v=20261020-nav-layout"></script>
 </body>
 </html>
