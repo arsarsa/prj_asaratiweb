@@ -32,7 +32,7 @@
     .highlight-online { background: transparent; color: #1d4ed8; padding: 0; border-radius: 0; }
     .inventory-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 24px 0 14px; }
     .inventory-toolbar label { display: flex; align-items: center; gap: 8px; color: #465366; }
-    #ebookList, #audioList, #boxList { display: none; }
+    #ebookList, #audioList, #boxList, #genericList { display: none; }
     .product-list { display: grid; gap: 12px; }
     .summary-card { margin: 0 0 22px; background: #fff; border: 1px solid #e1e6ee; border-radius: 14px; padding: 20px; box-shadow: 0 3px 12px rgb(20 36 60 / 4%); }
     .summary-scroll { overflow-x: auto; }
@@ -99,6 +99,11 @@
       .product-actions button { flex: initial; }
     }
 
+    [hidden] { display: none !important; }
+    .generic-upload { margin-top: 20px; }
+    .generic-upload .upload-card { border: 0; box-shadow: none; padding: 0; }
+    .archived-badge { display: inline-block; margin: 0 0 10px; padding: 4px 8px; border-radius: 5px; color: #854d0e; background: #fef3c7; font-size: .78rem; font-weight: 700; }
+    .product-card.is-archived { border-color: #e7cf99; }
 </style>
 </head>
 <body>
@@ -110,12 +115,18 @@
     </nav>
   </header>
 
-  <section class="summary-card" aria-labelledby="summaryTitle">
+  <p><button id="toggleSummaryBtn" aria-expanded="false" aria-controls="summaryPanel">Mostra riepilogo file caricati</button></p>
+  <section id="summaryPanel" class="summary-card" aria-labelledby="summaryTitle" hidden>
     <h2 id="summaryTitle">Riepilogo prodotti e vendite</h2>
     <p class="product-message">Le visualizzazioni partono da questa versione. Le visite di oggi usano il fuso orario italiano. I download conteggiati sono quelli dei clienti dopo un acquisto; prove e download dal pannello sono esclusi. Gli iscritti newsletter sono gli abbonati attivi che hanno dato il consenso acquistando quel prodotto.</p>
     <p id="totalDownloads" class="total-downloads" aria-live="polite">Download totali: …</p>
     <p id="todayQrViews" class="today-qr-views" aria-live="polite">Visite QR oggi: …</p>
     <div id="productSummary" class="summary-scroll" aria-live="polite">Caricamento riepilogo…</div>
+    <nav class="inventory-toolbar" aria-label="Pagine riepilogo">
+      <button id="summaryPrevious" type="button">← Precedente</button>
+      <span id="summaryPageInfo" role="status"></span>
+      <button id="summaryNext" type="button">Successiva →</button>
+    </nav>
   </section>
 
   <div class="upload-grid">
@@ -167,6 +178,28 @@
   <p id="fileZipFileId"></p>
   </section></div>
 
+  <section class="upload-card generic-upload" aria-labelledby="genericUploadTitle">
+    <h2 id="genericUploadTitle">Carica file</h2>
+    <p>Locandine, poster, foto, documenti e audio. Il download mantiene il formato originale.</p>
+    <div class="upload-grid">
+      <div class="upload-card">
+        <label for="genericName">Titolo</label><input id="genericName" type="text" placeholder="Titolo del file">
+        <label for="genericDescription">Descrizione</label><input id="genericDescription" type="text" placeholder="Breve descrizione">
+      </div>
+      <div class="upload-card">
+        <label for="genericInput">File (.pdf, .jpg, .png, .webp, .mp3, .wav, .m4a, .m4b, .aac, .ogg, .flac, .mp4, .zip)</label>
+        <input id="genericInput" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.mp3,.wav,.m4a,.m4b,.aac,.ogg,.flac,.mp4,.zip">
+      </div>
+      <div class="upload-card">
+        <label for="genericAccessMode">Disponibilità</label>
+        <select id="genericAccessMode"><option value="free">Pubblico — gratuito</option><option value="paid">Privato — a pagamento</option></select>
+        <label for="genericPrice">Prezzo (€)</label><input id="genericPrice" type="number" min="0" step="0.01" value="0" disabled>
+        <button id="uploadGenericButton" class="primary-button" type="button">Carica file</button>
+      </div>
+    </div>
+    <p id="genericMessage" role="status"></p><div id="genericFileId"></div>
+  </section>
+
   <div class="inventory-toolbar">
     <button id="toggleFilesBtn">Mostra prodotti caricati</button>
     <label><input id="showArchivedCheckbox" type="checkbox"> Mostra anche gli archiviati</label>
@@ -175,6 +208,7 @@
 <div id="ebookList" class="product-list"></div>
 <div id="audioList" class="product-list"></div>
 <div id="boxList" class="product-list"></div>
+<div id="genericList" class="product-list"></div>
 
 <div id="editProductModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="editProductTitle">
   <form id="editProductForm" class="modal-card">
@@ -232,6 +266,6 @@
   </div>
 </div>
 
-  <script type="module" src="scripts/online_upload.js?v=20261019-interface"></script>
+  <script type="module" src="scripts/online_upload.js?v=20261020-generic-pagination"></script>
 </body>
 </html>

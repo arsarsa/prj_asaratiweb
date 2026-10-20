@@ -65,12 +65,13 @@ exports.createProductUpload = functions.https.onCall(async (data, context) => {
   const description = String(data.description || "").trim();
   const accessMode = String(data.accessMode || "paid");
   const price = accessMode === "free" ? "0" : String(data.price || "").trim().replace(",", ".");
-  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook", file: "genericFiles" };
   const extension = fileName.split(".").pop().toLowerCase();
   const allowedExtensions = {
     ebook: ["epub", "pdf", "zip"],
     audiobook: ["mp3", "wav", "m4a", "m4b", "mp4", "zip"],
-    boxbook: ["zip", "mp4"]
+    boxbook: ["zip", "mp4"],
+    file: ["pdf", "jpg", "jpeg", "png", "webp", "mp3", "wav", "m4a", "m4b", "aac", "ogg", "flac", "mp4", "zip"]
   };
   const trailerFileName = String(data.trailerFileName || "").trim();
   const hasTrailer = Boolean(trailerFileName);
@@ -252,7 +253,7 @@ exports.createProductRevisionUpload = functions.https.onCall(async (data, contex
   if (product.archivedAt || !product.storagePath || !product.storageFileName) {
     throw new functions.https.HttpsError("failed-precondition", "Restore the product before uploading a revision.");
   }
-  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook", file: "genericFiles" };
   const root = (product.accessMode || "paid") === "free" ? "public_file" : "protected_file";
   if (!categoryByType[product.type] || product.storagePath !== `${root}/${categoryByType[product.type]}/${productId}` || /[\\/]/.test(product.storageFileName)) {
     throw new functions.https.HttpsError("failed-precondition", "Product file path is invalid.");
@@ -339,7 +340,7 @@ exports.createProductDownloadUrl = functions.https.onCall(async (data, context) 
   const productSnapshot = await db.collection("products").doc(productId).get();
   if (!productSnapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
   const product = productSnapshot.data();
-  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook", file: "genericFiles" };
   const category = categoryByType[product.type];
   const root = (product.accessMode || "paid") === "free" ? "public_file" : "protected_file";
   if (!category || !product.storagePath || !product.storageFileName ||
@@ -508,7 +509,7 @@ exports.duplicateProduct = functions.https.onCall(async (data, context) => {
   const sourceSnapshot = await sourceRef.get();
   if (!sourceSnapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
   const source = sourceSnapshot.data();
-  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook" };
+  const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook", file: "genericFiles" };
   const category = categoryByType[source.type];
   const root = (source.accessMode || "paid") === "free" ? "public_file" : "protected_file";
   if (!category || ![`${root}/${category}`, `${root}/${category}/${sourceId}`].includes(source.storagePath) ||
@@ -576,7 +577,7 @@ exports.generateProductQr = functions.storage.object().onFinalize(async () => nu
 
 exports.generateProductQrEurope = functions.region("europe-west1").storage.object().onFinalize(async (object) => {
   const objectPath = object.name || "";
-  const match = objectPath.match(/^(protected_file|public_file)\/(eBook|audioBook|boxBook)\/([a-zA-Z0-9_-]{3,80})\/([^/]+)$/);
+  const match = objectPath.match(/^(protected_file|public_file)\/(eBook|audioBook|boxBook|genericFiles)\/([a-zA-Z0-9_-]{3,80})\/([^/]+)$/);
   if (!match) return null;
   const [, root, category, productId, fileName] = match;
   const productRef = db.collection("products").doc(productId);

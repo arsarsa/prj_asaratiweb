@@ -28,6 +28,9 @@ let audioPreviewRequest = 0;
 let editingProduct = null;
 let revisionProduct = null;
 let trailerProductId = null;
+let summaryPage = 0;
+let summaryRequest = 0;
+const summaryPageSize = 5;
 
 onAuthStateChanged(auth, (user) => {
   document.getElementById("loginModal").classList.toggle("show", !user);
@@ -56,7 +59,8 @@ async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, 
   const allowedExtensions = {
     ebook: ["epub", "pdf", "zip"],
     audiobook: ["mp3", "wav", "m4a", "m4b", "mp4", "zip"],
-    boxbook: ["zip", "mp4"]
+    boxbook: ["zip", "mp4"],
+    file: ["pdf", "jpg", "jpeg", "png", "webp", "mp3", "wav", "m4a", "m4b", "aac", "ogg", "flac", "mp4", "zip"]
   };
   const extension = file?.name.split(".").pop().toLowerCase();
   if (!file || !allowedExtensions[type]?.includes(extension) || (trailerFile && !trailerFile.name.toLowerCase().endsWith(".mp4")) || !name || !description ||
@@ -108,7 +112,7 @@ async function uploadProduct({ fileInput, trailerInput, accessInput, nameInput, 
     qrPreview.style.margin = "14px 0";
     const download = actionButton("Scarica QR SVG", () => downloadQr(qrPath, productId));
     resultEl.append(link, qrPreview, download);
-    const listId = { ebook: "ebookList", audiobook: "audioList", boxbook: "boxList" }[type];
+    const listId = { ebook: "ebookList", audiobook: "audioList", boxbook: "boxList", file: "genericList" }[type];
     await displayUploadedProducts(type, listId);
     messageEl.textContent = accessMode === "free"
       ? "Prodotto gratuito pubblicato. QR e download dalla pagina QR sono pronti."
@@ -160,7 +164,7 @@ async function displayUploadedProducts(type, containerId) {
 
     for (const { id, product, archived } of products) {
       const row = document.createElement("article");
-      row.className = "product-card";
+      row.className = archived ? "product-card is-archived" : "product-card";
       row.id = `product-${id}`;
       const coverColumn = document.createElement("div");
       coverColumn.className = "product-cover";
@@ -169,6 +173,10 @@ async function displayUploadedProducts(type, containerId) {
         cover.src = product.coverImage;
         cover.alt = `Copertina di ${product.name || id}`;
         cover.loading = "lazy";
+        cover.addEventListener("error", () => {
+          coverColumn.classList.add("cover-placeholder");
+          coverColumn.textContent = "Copertina non disponibile";
+        }, { once: true });
         const button = document.createElement("button");
         button.type = "button";
         button.className = "cover-button";
@@ -260,6 +268,12 @@ async function displayUploadedProducts(type, containerId) {
       } else {
         actions.append(actionButton("Ripristina", () => restoreArchivedProduct(id)));
       }
+      if (archived) {
+        const badge = document.createElement("span");
+        badge.className = "archived-badge";
+        badge.textContent = "Archiviato";
+        mainColumn.append(badge);
+      }
       mainColumn.append(title, meta);
       row.append(mainColumn, secondary, description);
       if (type === "audiobook" && product.audiobookPackage?.tracks?.length) {
@@ -346,6 +360,7 @@ function refreshProducts() {
   void displayUploadedProducts("ebook", "ebookList");
   void displayUploadedProducts("audiobook", "audioList");
   void displayUploadedProducts("boxbook", "boxList");
+  void displayUploadedProducts("file", "genericList");
   void renderProductSummary();
   void renderTotalQrViewsToday();
 }
@@ -363,18 +378,30 @@ function getRomeDateKey() {
 
 async function renderProductSummary() {
   const container = document.getElementById("productSummary");
+  if (document.getElementById("summaryPanel").hidden) return;
+  const request = ++summaryRequest;
   container.textContent = "Caricamento riepilogo…";
   try {
     const snapshot = await getDocs(collection(db, "products"));
     const products = snapshot.docs
       .map((item) => ({ id: item.id, product: item.data() }))
-      .filter(({ product }) => ["ebook", "audiobook", "boxbook"].includes(product.type))
+      .filter(({ product }) => ["ebook", "audiobook", "boxbook", "file"].includes(product.type))
       .sort((a, b) => String(a.product.name || a.id).localeCompare(String(b.product.name || b.id), "it"));
     if (!products.length) {
       container.textContent = "Non ci sono ancora prodotti.";
+      document.getElementById("summaryPageInfo").textContent = "0 file";
+      document.getElementById("summaryPrevious").disabled = true;
+      document.getElementById("summaryNext").disabled = true;
       return;
     }
-    const summaries = await loadProductSummaries(products.map(({ id }) => id));
+    const pageCount = Math.max(1, Math.ceil(products.length / summaryPageSize));
+    summaryPage = Math.min(summaryPage, pageCount - 1);
+    const pageProducts = products.slice(summaryPage * summaryPageSize, (summaryPage + 1) * summaryPageSize);
+    const summaries = await loadProductSummaries(pageProducts.map(({ id }) => id));
+    if (request !== summaryRequest) return;
+    document.getElementById("summaryPageInfo").textContent = `Pagina ${summaryPage + 1} di ${pageCount} · ${products.length} file`;
+    document.getElementById("summaryPrevious").disabled = summaryPage === 0;
+    document.getElementById("summaryNext").disabled = summaryPage >= pageCount - 1;
     const table = document.createElement("table");
     table.className = "summary-table";
     const head = document.createElement("thead");
@@ -389,7 +416,7 @@ async function renderProductSummary() {
     head.append(headerRow);
     table.append(head);
     const body = document.createElement("tbody");
-    for (const { id, product } of products) {
+    for (const { id, product } of pageProducts) {
       const summary = summaries[id] || {};
       const row = document.createElement("tr");
       const title = product.name || id;
@@ -399,10 +426,10 @@ async function renderProductSummary() {
       titleLink.textContent = product.archivedAt ? `${title} (archiviato)` : title;
       titleLink.addEventListener("click", async (event) => {
         event.preventDefault();
-        const listId = { ebook: "ebookList", audiobook: "audioList", boxbook: "boxList" }[product.type];
+        const listId = { ebook: "ebookList", audiobook: "audioList", boxbook: "boxList", file: "genericList" }[product.type];
         const showArchived = document.getElementById("showArchivedCheckbox");
         if (product.archivedAt) showArchived.checked = true;
-        ["ebookList", "audioList", "boxList"].forEach((id) => {
+        ["ebookList", "audioList", "boxList", "genericList"].forEach((id) => {
           document.getElementById(id).style.display = "grid";
         });
         document.getElementById("toggleFilesBtn").textContent = "Nascondi prodotti caricati";
@@ -462,7 +489,7 @@ async function renderTotalQrViewsToday() {
     const today = getRomeDateKey();
     const count = snapshot.docs.reduce((sum, productSnapshot) => {
       const product = productSnapshot.data();
-      if (!["ebook", "audiobook", "boxbook"].includes(product.type)) return sum;
+      if (!["ebook", "audiobook", "boxbook", "file"].includes(product.type)) return sum;
       if (product.counters?.viewsDate !== today) return sum;
       return sum + Number(product.counters?.viewsToday || 0);
     }, 0);
@@ -728,14 +755,14 @@ function chooseRevision(productId, product) {
   const input = document.getElementById("revisionFileInput");
   input.value = "";
   const currentExtension = String(product.storageFileName || "").split(".").pop().toLowerCase();
-  input.accept = product.type === "ebook" ? ".epub,.pdf" : product.type === "audiobook" ? `.${currentExtension}` : ".zip";
+  input.accept = product.type === "file" ? `.${currentExtension}` : product.type === "ebook" ? ".epub,.pdf" : product.type === "audiobook" ? `.${currentExtension}` : ".zip";
   input.click();
 }
 
 document.getElementById("revisionFileInput").addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file || !revisionProduct) return;
-  if (revisionProduct.product.type === "audiobook") {
+  if (["audiobook", "file"].includes(revisionProduct.product.type)) {
     const expected = String(revisionProduct.product.storageFileName || "").split(".").pop().toLowerCase();
     if (file.name.split(".").pop().toLowerCase() !== expected) {
       window.alert(`La revisione deve mantenere il formato .${expected} del file originale.`);
@@ -791,12 +818,15 @@ bind("uploadEbookButton", { file: "ebookInput", trailer: "ebookTrailerInput", ac
 bind("uploadaudiobookButton", { file: "audiobookInput", trailer: "audiobookTrailerInput", access: "audiobookAccessMode", name: "audiobookName", description: "audiobookDescription", price: "audiobookPrice", message: "audiobookMessage", result: "audiobookFileId" }, "audiobook");
 bind("uploadfileZipButton", { file: "fileZipInput", trailer: "boxbookTrailerInput", access: "boxbookAccessMode", name: "boxbookName", description: "boxbookDescription", price: "fileZipPrice", message: "fileZipMessage", result: "boxbookFileId" }, "boxbook");
 
-for (const [accessId, priceId] of [["ebookAccessMode", "ebookPrice"], ["audiobookAccessMode", "audiobookPrice"], ["boxbookAccessMode", "fileZipPrice"]]) {
+bind("uploadGenericButton", { file: "genericInput", access: "genericAccessMode", name: "genericName", description: "genericDescription", price: "genericPrice", message: "genericMessage", result: "genericFileId" }, "file");
+
+for (const [accessId, priceId] of [["ebookAccessMode", "ebookPrice"], ["audiobookAccessMode", "audiobookPrice"], ["boxbookAccessMode", "fileZipPrice"], ["genericAccessMode", "genericPrice"]]) {
   const access = document.getElementById(accessId);
   const price = document.getElementById(priceId);
   access.addEventListener("change", () => {
     const free = access.value === "free";
     price.readOnly = free;
+    price.disabled = free;
     price.min = free ? "0" : "0.01";
     price.placeholder = free ? "Gratis" : "Prezzo in EUR";
     if (free) price.value = "0";
@@ -804,8 +834,18 @@ for (const [accessId, priceId] of [["ebookAccessMode", "ebookPrice"], ["audioboo
   });
 }
 
+document.getElementById("toggleSummaryBtn").addEventListener("click", (event) => {
+  const panel = document.getElementById("summaryPanel");
+  panel.hidden = !panel.hidden;
+  event.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+  event.currentTarget.textContent = panel.hidden ? "Mostra riepilogo file caricati" : "Nascondi riepilogo file caricati";
+  if (!panel.hidden) void renderProductSummary();
+});
+document.getElementById("summaryPrevious").addEventListener("click", () => { summaryPage = Math.max(0, summaryPage - 1); void renderProductSummary(); });
+document.getElementById("summaryNext").addEventListener("click", () => { summaryPage += 1; void renderProductSummary(); });
+
 const toggleBtn = document.getElementById("toggleFilesBtn");
-const fileSections = ["ebookList", "audioList", "boxList"];
+const fileSections = ["ebookList", "audioList", "boxList", "genericList"];
 toggleBtn.addEventListener("click", () => {
   const show = fileSections.some((id) => window.getComputedStyle(document.getElementById(id)).display === "none");
   fileSections.forEach((id) => { document.getElementById(id).style.display = show ? "grid" : "none"; });
