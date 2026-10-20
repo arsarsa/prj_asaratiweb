@@ -9,7 +9,7 @@ const db = getFirestore(app);
 const createProductUpload = httpsCallable(functions, "createProductUpload");
 const updateProductDetails = httpsCallable(functions, "updateProductDetails");
 const createProductRevisionUpload = httpsCallable(functions, "createProductRevisionUpload");
-const recordProductRevision = httpsCallable(functions, "recordProductRevision");
+const recordProductRevision = httpsCallable(functions, "recordProductRevision", { timeout: 300000 });
 const archiveProduct = httpsCallable(functions, "archiveProduct");
 const restoreProduct = httpsCallable(functions, "restoreProduct");
 const createProductDownloadUrl = httpsCallable(functions, "createProductDownloadUrl");
@@ -227,6 +227,7 @@ async function displayUploadedProducts(type, containerId) {
         ["Disponibilità", product.accessMode === "free" ? "Pubblico / gratuito" : "Protetto / pagamento"],
         ["Caricato il", formatDate(product.createdAt)], ["Caricato da", createdBy.email || "Non registrato"],
         ["ID autore", createdBy.uid || "Non registrato"], ["ID prodotto", id],
+        ...(product.versioningEnabled ? [["Versione originale", product.currentVersionId || "In preparazione"]] : []),
         ...(type === "audiobook" ? [["Durata totale", formatDuration(product.audiobookPackage?.durationSeconds)]] : []),
         ["Trailer", product.trailerPath ? "Personalizzato" : "Non presente"],
         ...(type === "audiobook" ? [["Anteprima audio", product.audioPreviewPublished ? "Pubblicata" : product.audioPreviewDraft ? "Bozza privata" : "Da generare"]] : []),
@@ -786,14 +787,14 @@ function chooseRevision(productId, product) {
   const input = document.getElementById("revisionFileInput");
   input.value = "";
   const currentExtension = String(product.storageFileName || "").split(".").pop().toLowerCase();
-  input.accept = product.type === "file" ? `.${currentExtension}` : product.type === "ebook" ? ".epub,.pdf" : product.type === "audiobook" ? `.${currentExtension}` : ".zip";
+  input.accept = product.versioningEnabled ? `.${currentExtension}` : product.type === "file" ? `.${currentExtension}` : product.type === "ebook" ? ".epub,.pdf" : product.type === "audiobook" ? `.${currentExtension}` : ".zip";
   input.click();
 }
 
 document.getElementById("revisionFileInput").addEventListener("change", async (event) => {
   const file = event.target.files?.[0];
   if (!file || !revisionProduct) return;
-  if (["audiobook", "file"].includes(revisionProduct.product.type)) {
+  if (revisionProduct.product.versioningEnabled || ["audiobook", "file"].includes(revisionProduct.product.type)) {
     const expected = String(revisionProduct.product.storageFileName || "").split(".").pop().toLowerCase();
     if (file.name.split(".").pop().toLowerCase() !== expected) {
       window.alert(`La revisione deve mantenere il formato .${expected} del file originale.`);
@@ -801,13 +802,16 @@ document.getElementById("revisionFileInput").addEventListener("change", async (e
       return;
     }
   }
-  if (!window.confirm(`Caricare una nuova versione di “${revisionProduct.product.name || revisionProduct.id}”? Il file pubblicato verrà sostituito.`)) return;
+  const revisionNote = revisionProduct.product.versioningEnabled
+    ? "La nuova edizione verrà pubblicata conservando gli originali delle edizioni precedenti."
+    : "Il file pubblicato verrà sostituito.";
+  if (!window.confirm(`Caricare una nuova versione di “${revisionProduct.product.name || revisionProduct.id}”? ${revisionNote}`)) return;
   try {
     const contentType = file.type || "application/octet-stream";
-    const { data } = await createProductRevisionUpload({ productId: revisionProduct.id, contentType });
+    const { data } = await createProductRevisionUpload({ productId: revisionProduct.id, contentType, fileName: file.name });
     const upload = await fetch(data.uploadUrl, { method: "PUT", headers: { "Content-Type": contentType }, body: file });
     if (!upload.ok) throw new Error(`Upload non riuscito (${upload.status}).`);
-    await recordProductRevision({ productId: revisionProduct.id });
+    await recordProductRevision({ productId: revisionProduct.id, ...(data.revisionId ? { revisionId: data.revisionId } : {}) });
     window.alert("Revisione caricata. Il QR rimane invariato e continua a puntare alla stessa pagina.");
     refreshProducts();
   } catch (error) {
@@ -918,7 +922,7 @@ const actionDescriptions = {
   "Apri pagina prodotto": "Apre in una nuova scheda la pagina pubblica che vedrà chi scansiona il QR.",
   "Modifica": "Modifica titolo, descrizione e prezzo del prodotto.",
   "Duplica": "Crea una copia del prodotto da configurare separatamente, con un nuovo identificativo e QR.",
-  "Carica revisione": "Sostituisce il file scaricabile con una nuova versione, mantenendo lo stesso prodotto e il suo QR.",
+  "Carica revisione": "Carica una nuova versione mantenendo prodotto e QR. Per i prodotti versionati conserva anche gli originali delle edizioni precedenti.",
   "Cancella": "Archivia il prodotto e lo ritira dalla vendita. Puoi ritrovarlo con Mostra anche gli archiviati e ripristinarlo.",
   "Ripristina": "Ripristina un prodotto archiviato."
 };

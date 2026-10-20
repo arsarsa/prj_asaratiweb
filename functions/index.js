@@ -12,6 +12,12 @@ admin.initializeApp({
 });
 const db = admin.firestore();
 const bucket = admin.storage().bucket("asarati-9aafe.firebasestorage.app");
+const { validStoragePath } = require("./product-storage");
+const { createVersionHandlers } = require("./product-versions");
+const productVersions = createVersionHandlers({ db, bucket, HttpsError: functions.https.HttpsError,
+  timestamp: () => admin.firestore.FieldValue.serverTimestamp(), deleteField: () => admin.firestore.FieldValue.delete() });
+exports.initializeProductVersion = functions.runWith({ timeoutSeconds: 300, memory: "1GB" }).https.onCall(productVersions.initialize);
+
 
 const { createAudioPreviewHandlers } = require("./audio-preview-functions");
 const audioPreviews = createAudioPreviewHandlers({ functions, admin, db, bucket });
@@ -79,7 +85,7 @@ exports.createProductUpload = functions.https.onCall(async (data, context) => {
   const trailerPath = hasTrailer ? `public_file/product_trailers/${productId}.mp4` : null;
   const productRef = db.collection("products").doc(productId);
   const existing = await productRef.get();
-  if (existing.exists && (existing.get("active") === true || existing.get("archivedAt"))) {
+  if (existing.exists && (existing.get("active") === true || existing.get("archivedAt") || existing.get("versioningEnabled"))) {
     throw new functions.https.HttpsError("already-exists", "Product ID already exists.");
   }
   const productData = {
@@ -241,6 +247,7 @@ exports.createProductRevisionUpload = functions.https.onCall(async (data, contex
   const productSnapshot = await productRef.get();
   if (!productSnapshot.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
   const product = productSnapshot.data();
+  if (product.versioningEnabled === true) return productVersions.stage(data, context);
   if (product.archivedAt || !product.storagePath || !product.storageFileName) {
     throw new functions.https.HttpsError("failed-precondition", "Restore the product before uploading a revision.");
   }
@@ -258,7 +265,7 @@ exports.createProductRevisionUpload = functions.https.onCall(async (data, contex
   return { uploadUrl, objectPath };
 });
 
-exports.recordProductRevision = functions.https.onCall(async (data, context) => {
+exports.recordProductRevision = functions.runWith({ timeoutSeconds: 300, memory: "1GB" }).https.onCall(async (data, context) => {
   if (!context.auth || context.auth.token.admin !== true) {
     throw new functions.https.HttpsError("permission-denied", "Admin access required.");
   }
@@ -266,6 +273,7 @@ exports.recordProductRevision = functions.https.onCall(async (data, context) => 
   const productRef = db.collection("products").doc(productId);
   const product = await productRef.get();
   if (!product.exists) throw new functions.https.HttpsError("not-found", "Product not found.");
+  if (product.get("versioningEnabled") === true) return productVersions.finalize(data, context);
   const editor = { uid: context.auth.uid, email: context.auth.token.email || null };
   await productRef.update({
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -334,13 +342,12 @@ exports.createProductDownloadUrl = functions.https.onCall(async (data, context) 
   const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook", file: "genericFiles" };
   const category = categoryByType[product.type];
   const root = (product.accessMode || "paid") === "free" ? "public_file" : "protected_file";
-  if (!category || !product.storagePath || !product.storageFileName ||
-      ![`${root}/${category}`, `${root}/${category}/${productId}`].includes(product.storagePath) ||
-      /[\\/]/.test(product.storageFileName)) {
-    throw new functions.https.HttpsError("failed-precondition", "Product file path is missing.");
+  if (!category || !validStoragePath(product, productId, true)) {
+    throw new functions.https.HttpsError("failed-precondition", "Product file path is invalid.");
   }
+
   const fileName = String(product.storageFileName).replace(/[\\"\r\n]/g, "_");
-  const [downloadUrl] = await bucket.file(`${product.storagePath}/${product.storageFileName}`).getSignedUrl({
+  const [downloadUrl] = await bucket.file(`${product.storagePath}/${product.storageFileName}`, product.versioningEnabled ? { generation: product.originalGeneration } : undefined).getSignedUrl({
     version: "v4",
     action: "read",
     expires: Date.now() + 5 * 60 * 1000,
@@ -503,9 +510,8 @@ exports.duplicateProduct = functions.https.onCall(async (data, context) => {
   const categoryByType = { ebook: "eBook", audiobook: "audioBook", boxbook: "boxBook", file: "genericFiles" };
   const category = categoryByType[source.type];
   const root = (source.accessMode || "paid") === "free" ? "public_file" : "protected_file";
-  if (!category || ![`${root}/${category}`, `${root}/${category}/${sourceId}`].includes(source.storagePath) ||
-      !source.storageFileName || /[\\/]/.test(source.storageFileName) || source.archivedAt) {
-    throw new functions.https.HttpsError("failed-precondition", "This product cannot be duplicated.");
+  if (!category || !validStoragePath(source, sourceId, true) || source.archivedAt) {
+    throw new functions.https.HttpsError("failed-precondition", "Source product file path is invalid.");
   }
 
   const sourcePath = `${source.storagePath}/${source.storageFileName}`;
@@ -540,7 +546,7 @@ exports.duplicateProduct = functions.https.onCall(async (data, context) => {
     ? `public_file/product_trailers/${productId}.mp4`
     : null;
   if (duplicateTrailerPath) duplicate.trailerPath = duplicateTrailerPath;
-  ["publicUrl", "qrCodePath", "qrCodeGeneratedAt", "archivedAt", "archivedBy", "updatedAt", "updatedBy", "revisedAt", "revisedBy"].forEach((field) => delete duplicate[field]);
+  ["versioningEnabled", "currentVersionId", "nextVersionNumber", "originalSha256", "originalGeneration", "licenseMode", "publicUrl", "qrCodePath", "qrCodeGeneratedAt", "archivedAt", "archivedBy", "updatedAt", "updatedBy", "revisedAt", "revisedBy"].forEach((field) => delete duplicate[field]);
 
   await productRef.create(duplicate);
   await offerRef.set({ productId, name, title: name, slug: productId, campaignId: "qrc", active: false }, { merge: true });
@@ -550,7 +556,7 @@ exports.duplicateProduct = functions.https.onCall(async (data, context) => {
       if (trailerExists) await bucket.file(sourceTrailerPath).copy(bucket.file(duplicateTrailerPath));
       if (!trailerExists) await productRef.update({ trailerPath: admin.firestore.FieldValue.delete() });
     }
-    await bucket.file(sourcePath).copy(bucket.file(destinationPath));
+    await bucket.file(sourcePath, source.versioningEnabled ? { generation: source.originalGeneration } : undefined).copy(bucket.file(destinationPath));
   } catch (error) {
     await Promise.allSettled([
       productRef.delete(), offerRef.delete(),
@@ -1260,7 +1266,7 @@ exports.generateDownloadUrl = functions.runWith({ secrets: ["ASARATI_RESEND_KEY"
     console.log("📦 file richiesto:", fullPath);
 
     // 🔐 3. Genera URL firmato
-    const [url] = await bucket.file(fullPath).getSignedUrl({
+    const [url] = await bucket.file(fullPath, product.versioningEnabled ? { generation: product.originalGeneration } : undefined).getSignedUrl({
       action: "read",
       expires: Date.now() + 24 * 60 * 60 * 1000
     });
