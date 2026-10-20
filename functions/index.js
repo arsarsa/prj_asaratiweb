@@ -22,19 +22,10 @@ exports.setAudiobookPreviewPublished = functions.runWith({ timeoutSeconds: 120, 
 
 let resendClient;
 
-function getRuntimeConfig() {
-  return functions.config?.() || {};
-}
+const { resolveStripeSettings } = require("./runtime-settings");
 
 function getStripeSettings() {
-  const config = getRuntimeConfig().stripe || {};
-  const isTest = config.mode !== "live";
-  return {
-    config,
-    isTest,
-    secret: isTest ? config.test_secret : config.live_secret,
-    webhookSecret: isTest ? config.test_webhook_secret : config.live_webhook_secret
-  };
+  return resolveStripeSettings();
 }
 
 function getStripeClient() {
@@ -45,7 +36,7 @@ function getStripeClient() {
 
 function getResendClient() {
   if (resendClient) return resendClient;
-  const apiKey = getRuntimeConfig().resend?.key;
+  const apiKey = process.env.ASARATI_RESEND_KEY;
   if (!apiKey) throw new Error("Resend API key is not configured.");
   resendClient = new Resend(apiKey);
   return resendClient;
@@ -621,7 +612,7 @@ function priceToMinorUnits(value) {
     : null;
 }
 
-exports.createPayment = functions.https.onRequest( async (req, res) => {
+exports.createPayment = functions.runWith({ secrets: ["ASARATI_STRIPE_TEST_SECRET"] }).https.onRequest( async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
   if (req.method === "OPTIONS") return res.status(204).send("");
@@ -895,7 +886,7 @@ exports.checkPaymentStatus = functions.https.onRequest(async (req, res) => {
   }
 });
 
-exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
+exports.stripeWebhook = functions.runWith({ secrets: ["ASARATI_STRIPE_TEST_SECRET", "ASARATI_STRIPE_TEST_WEBHOOK_SECRET", "ASARATI_RESEND_KEY"] }).https.onRequest(async (req, res) => {
   console.log("🔥 WEBHOOK RICEVUTO");
 
   try {
@@ -1215,7 +1206,7 @@ try {
   }
 });
 
-exports.generateDownloadUrl = functions.https.onRequest(async (req, res) => {
+exports.generateDownloadUrl = functions.runWith({ secrets: ["ASARATI_RESEND_KEY"] }).https.onRequest(async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
 
   const { productId, paymentIntentId } = req.query;
@@ -1433,11 +1424,6 @@ async function createStripePayment({
     {
       id:
         paymentIntent.id,
-
-      client_secret_prefix:
-        paymentIntent
-          .client_secret
-          ?.slice(0, 20),
 
       livemode:
         paymentIntent.livemode,
