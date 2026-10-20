@@ -44,3 +44,9 @@ Il test del browser con dati simulati verifica che la revisione ZIP invii l’id
 ## Prossima tappa
 
 Fissare la versione al momento del pagamento, creare una sola licenza per acquisto confermato e generare una copia EPUB personalizzata. Fino ad allora gli acquisti continuano nel flusso precedente e non si promette una consegna con watermark.
+
+## Prima registrazione verificata
+
+La `v1` del solo pilota è stata registrata con 504631 byte e SHA-256 ZIP `993b1ba9f697673317193602bd4a6b0ffeec52fd4df85beefb42f3fc393e92d6`. L’EPUB interno mantiene SHA-256 `f750bfdcecebcc3540b3880ade389d1376badcecc6e59b768a5a084b8018c9bf`. La generazione del file precedente è rimasta invariata.
+
+I controlli successivi alla registrazione confermano: pagina QRC HTTP 200; accesso anonimo a copia privata e registro HTTP 403; configurazione Stripe ancora `test`. Il prodotto non ha `licenseMode` abilitato e non sono stati creati pagamenti, licenze o file personalizzati da questa operazione.
